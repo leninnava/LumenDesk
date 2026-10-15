@@ -10,6 +10,7 @@ struct LumenDeskApp: App {
     #if os(macOS)
     @StateObject private var goveeBluetooth = GoveeBluetoothController()
     @StateObject private var goveeScenes = GoveeSceneStore()
+    @StateObject private var networkGate = NativeNetworkGate()
     #endif
 
     var body: some Scene {
@@ -33,6 +34,7 @@ struct LumenDeskApp: App {
                 .environmentObject(manager)
                 .environmentObject(goveeBluetooth)
                 .environmentObject(goveeScenes)
+                .environmentObject(networkGate)
                 .frame(minWidth: 640, minHeight: 460)
         }
         .commands {
@@ -68,6 +70,7 @@ struct LumenDeskApp: App {
         Settings {
             NativeSettingsView()
                 .environmentObject(manager)
+                .environmentObject(networkGate)
         }
 
         MenuBarExtra {
@@ -75,6 +78,7 @@ struct LumenDeskApp: App {
                 .environmentObject(manager)
                 .environmentObject(goveeBluetooth)
                 .environmentObject(goveeScenes)
+                .environmentObject(networkGate)
         } label: {
             NativeMenuBarLabel(manager: manager)
         }

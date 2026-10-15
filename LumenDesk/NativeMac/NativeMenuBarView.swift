@@ -14,6 +14,7 @@ struct NativeMenuBarLabel: View {
 struct NativeMenuBarView: View {
     @EnvironmentObject private var manager: LightManager
     @EnvironmentObject private var bluetooth: GoveeBluetoothController
+    @EnvironmentObject private var networkGate: NativeNetworkGate
     @Environment(\.openWindow) private var openWindow
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
 
@@ -34,6 +35,20 @@ struct NativeMenuBarView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+
+            if !networkGate.isHome {
+                HStack {
+                    Label("Paused on this network", systemImage: "pause.circle")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Home Network") { networkGate.rememberCurrent() }
+                        .controlSize(.small)
+                        .disabled(networkGate.current == nil)
+                        .help("Mark this network as home, so LumenDesk finds lights here on its own")
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 8)
+            }
 
             Divider()
 
@@ -89,10 +104,7 @@ struct NativeMenuBarView: View {
             .padding(6)
         }
         .frame(width: 300)
-        .onAppear {
-            manager.start()
-            manager.connectGoveeBluetooth(bluetooth)
-        }
+        .onAppear { manager.startNative(bluetooth: bluetooth, gate: networkGate) }
     }
 }
 

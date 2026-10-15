@@ -11,6 +11,7 @@ enum NativeSidebarItem: Hashable {
 struct NativeMainWindow: View {
     @EnvironmentObject private var manager: LightManager
     @EnvironmentObject private var bluetooth: GoveeBluetoothController
+    @EnvironmentObject private var networkGate: NativeNetworkGate
     @State private var selection: NativeSidebarItem? = .all
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
     @State private var addingRoom = false
@@ -58,6 +59,7 @@ struct NativeMainWindow: View {
             }
         } detail: {
             detail
+                .safeAreaInset(edge: .top) { pausedBanner }
                 .safeAreaInset(edge: .bottom) { errorBanner }
         }
         .toolbar {
@@ -110,10 +112,7 @@ struct NativeMainWindow: View {
         ) { name in
             if let room = renamingRoom { manager.renameRoom(room.id, to: name) }
         }
-        .onAppear {
-            manager.start()
-            manager.connectGoveeBluetooth(bluetooth)
-        }
+        .onAppear { manager.startNative(bluetooth: bluetooth, gate: networkGate) }
     }
 
     @ViewBuilder private var detail: some View {
@@ -138,6 +137,25 @@ struct NativeMainWindow: View {
 
     private var placeholder: some View {
         Text("Select a light or room").foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder private var pausedBanner: some View {
+        if !networkGate.isHome {
+            HStack {
+                Image(systemName: "pause.circle").foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Paused on this network")
+                    Text("LumenDesk only searches for lights on its own on your home networks.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Scan Once") { manager.scan() }
+                Button("This Is My Home Network") { networkGate.rememberCurrent() }
+                    .disabled(networkGate.current == nil)
+            }
+            .padding(10)
+            .background(.bar)
+        }
     }
 
     @ViewBuilder private var errorBanner: some View {

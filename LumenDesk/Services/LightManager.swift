@@ -80,6 +80,10 @@ final class LightManager: ObservableObject {
     private var govee: GoveeClient?
     /// Fork: Govee lights that exist only over Bluetooth are controlled through this.
     weak var goveeBluetooth: GoveeBluetoothLightTransport?
+    /// Fork: false off the user's home networks, which stops periodic polling of LAN lights
+    /// (and Nanoleaf, whose token travels in the URL) so nothing is sent to saved addresses
+    /// on an unfamiliar network. Bluetooth-only lights are unaffected.
+    var networkActivityAllowed = true
     private let nanoleaf: NanoleafClient
     /// Shapes arrangements, orientation, per-panel designs and live output.
     /// Views that draw a wall observe it directly, so a streamed frame never
@@ -518,6 +522,7 @@ final class LightManager: ObservableObject {
                 d.isStale = true
                 stalenessGeneration += 1  // triggers manager @Published, re-renders rooms
             }
+            guard networkActivityAllowed || d.isBluetoothOnly else { continue }
             switch d.brand {
             case .nanoleaf: nanoleaf.refresh(d.backendID)
             case .lifx:  lifx?.refresh(macHex: d.backendID)

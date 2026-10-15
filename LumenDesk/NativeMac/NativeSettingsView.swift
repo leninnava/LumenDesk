@@ -54,9 +54,29 @@ private struct NativeGeneralSettings: View {
 
 private struct NativeNetworkSettings: View {
     @EnvironmentObject private var manager: LightManager
+    @EnvironmentObject private var networkGate: NativeNetworkGate
 
     var body: some View {
         Form {
+            Section {
+                LabeledContent("This network") {
+                    Text(networkGate.current?.title ?? "Not connected")
+                }
+                ForEach(networkGate.homes) { network in
+                    LabeledContent(network.title) {
+                        Button("Remove") { networkGate.forget(network) }
+                    }
+                }
+                HStack {
+                    Spacer()
+                    Button("Add This Network") { networkGate.rememberCurrent() }
+                        .disabled(networkGate.current == nil || networkGate.isHome)
+                }
+            } header: {
+                Text("Home networks")
+            } footer: {
+                Text("On other networks LumenDesk doesn't search for or contact lights on its own. Networks are recognised by their address range and router, so another network using the same range can look like home.")
+            }
             Section {
                 LabeledContent("Lights found", value: "\(manager.devices.count)")
                 LabeledContent("Last scan") {

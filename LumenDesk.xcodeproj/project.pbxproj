@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F800000000000000000017 /* NativeStartup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000017 /* NativeStartup.swift */; };
+		F800000000000000000016 /* NativeNetworkGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000016 /* NativeNetworkGate.swift */; };
 		F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000015 /* NativeBluetoothPairing.swift */; };
 		F800000000000000000014 /* NativeGoveeBluetoothBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000014 /* NativeGoveeBluetoothBridge.swift */; };
 		F800000000000000000013 /* NativeRooms.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000013 /* NativeRooms.swift */; };
@@ -121,6 +123,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F900000000000000000017 /* NativeStartup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStartup.swift; sourceTree = "<group>"; };
+		F900000000000000000016 /* NativeNetworkGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNetworkGate.swift; sourceTree = "<group>"; };
 		F900000000000000000015 /* NativeBluetoothPairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBluetoothPairing.swift; sourceTree = "<group>"; };
 		F900000000000000000014 /* NativeGoveeBluetoothBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeGoveeBluetoothBridge.swift; sourceTree = "<group>"; };
 		F900000000000000000013 /* NativeRooms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRooms.swift; sourceTree = "<group>"; };
@@ -422,6 +426,8 @@
 		F700000000000000000001 /* NativeMac */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000017 /* NativeStartup.swift */,
+				F900000000000000000016 /* NativeNetworkGate.swift */,
 				F900000000000000000015 /* NativeBluetoothPairing.swift */,
 				F900000000000000000014 /* NativeGoveeBluetoothBridge.swift */,
 				F900000000000000000013 /* NativeRooms.swift */,
@@ -529,6 +535,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F800000000000000000017 /* NativeStartup.swift in Sources */,
+				F800000000000000000016 /* NativeNetworkGate.swift in Sources */,
 				F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */,
 				F800000000000000000014 /* NativeGoveeBluetoothBridge.swift in Sources */,
 				F800000000000000000013 /* NativeRooms.swift in Sources */,
