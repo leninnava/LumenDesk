@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		F800000000000000000102 /* NativeSceneLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000102 /* NativeSceneLibrary.swift */; };
+		F800000000000000000103 /* NativeEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000103 /* NativeEffects.swift */; };
 		F800000000000000000017 /* NativeStartup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000017 /* NativeStartup.swift */; };
 		F800000000000000000016 /* NativeNetworkGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000016 /* NativeNetworkGate.swift */; };
 		F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000015 /* NativeBluetoothPairing.swift */; };
@@ -125,6 +126,7 @@
 
 /* Begin PBXFileReference section */
 		F900000000000000000102 /* NativeSceneLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSceneLibrary.swift; sourceTree = "<group>"; };
+		F900000000000000000103 /* NativeEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeEffects.swift; sourceTree = "<group>"; };
 		F900000000000000000017 /* NativeStartup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStartup.swift; sourceTree = "<group>"; };
 		F900000000000000000016 /* NativeNetworkGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNetworkGate.swift; sourceTree = "<group>"; };
 		F900000000000000000015 /* NativeBluetoothPairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBluetoothPairing.swift; sourceTree = "<group>"; };
@@ -429,6 +431,7 @@
 			isa = PBXGroup;
 			children = (
 				F900000000000000000102 /* NativeSceneLibrary.swift */,
+				F900000000000000000103 /* NativeEffects.swift */,
 				F900000000000000000017 /* NativeStartup.swift */,
 				F900000000000000000016 /* NativeNetworkGate.swift */,
 				F900000000000000000015 /* NativeBluetoothPairing.swift */,
@@ -539,6 +542,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F800000000000000000102 /* NativeSceneLibrary.swift in Sources */,
+				F800000000000000000103 /* NativeEffects.swift in Sources */,
 				F800000000000000000017 /* NativeStartup.swift in Sources */,
 				F800000000000000000016 /* NativeNetworkGate.swift in Sources */,
 				F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */,

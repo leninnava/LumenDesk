@@ -57,6 +57,8 @@ struct NativeGroupDetailView: View {
                     }
                 }
 
+                NativeEffectsSection(scope: scope, lights: lights)
+
                 Section {
                     NativeLightCollection(lights: lights, layout: layout) { selection = .light($0.id) }
                         .padding(.vertical, 4)
