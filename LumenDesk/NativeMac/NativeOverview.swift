@@ -54,8 +54,9 @@ struct NativeOverviewView: View {
             }
             HStack(spacing: 10) {
                 if !manager.devices.isEmpty {
+                    // Applied directly (undo still works): this page is for immediate action.
                     Button {
-                        manager.setAllPower(on: true)
+                        manager.setPower(deviceIDs: Set(manager.devices.map(\.id)), on: true)
                     } label: {
                         Label("Turn All On", systemImage: "lightbulb.fill").frame(minWidth: 110)
                     }
@@ -63,7 +64,7 @@ struct NativeOverviewView: View {
                     .disabled(onCount == manager.devices.count)
 
                     Button {
-                        manager.setAllPower(on: false)
+                        manager.setPower(deviceIDs: Set(manager.devices.map(\.id)), on: false)
                     } label: {
                         Label("Turn All Off", systemImage: "lightbulb").frame(minWidth: 110)
                     }
