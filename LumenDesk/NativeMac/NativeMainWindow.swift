@@ -4,6 +4,7 @@ import SwiftUI
 enum NativeSidebarItem: Hashable {
     case all
     case scenes
+    case music
     case room(UUID)
     case light(String)
 }
@@ -26,6 +27,7 @@ struct NativeMainWindow: View {
                 Section {
                     Label("All Lights", systemImage: "lightbulb.2").tag(NativeSidebarItem.all)
                     Label("Scenes", systemImage: "photo.on.rectangle").tag(NativeSidebarItem.scenes)
+                    Label("Music", systemImage: "music.note").tag(NativeSidebarItem.music)
                 }
                 Section("Rooms") {
                     ForEach(manager.rooms) { room in
@@ -134,6 +136,8 @@ struct NativeMainWindow: View {
             }
         case .scenes:
             NativeSceneLibraryView()
+        case .music:
+            NativeMusicView()
         case .all, nil:
             NativeGroupDetailView(title: "All Lights", scope: .all, lights: manager.devices, selection: $selection)
         }
