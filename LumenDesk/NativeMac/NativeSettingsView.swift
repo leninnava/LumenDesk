@@ -24,9 +24,22 @@ private struct NativeGeneralSettings: View {
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
     @AppStorage(NativeBluetoothIdleRelease.enabledKey) private var releaseBluetooth = false
     @AppStorage(NativeBluetoothIdleRelease.minutesKey) private var releaseMinutes = NativeBluetoothIdleRelease.defaultMinutes
+    @AppStorage(NativeControlsLocation.storageKey) private var controlsLocation = NativeControlsLocation.defaultValue
 
     var body: some View {
         Form {
+            if NativeControlsLocation.isControlCenterAvailable {
+                Section {
+                    Picker("Show controls in", selection: $controlsLocation) {
+                        ForEach(NativeControlsLocation.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                } footer: {
+                    Text(controlsLocation == .controlCenter
+                         ? "Add LumenDesk's controls from Control Center → Edit Controls. The menu bar icon is hidden."
+                         : "LumenDesk shows its own menu bar icon. You can remove its controls from Control Center → Edit Controls.")
+                }
+            }
             NativeLaunchAtLoginSection()
             Section {
                 Picker("Show lights as", selection: $layout) {

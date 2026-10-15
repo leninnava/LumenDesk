@@ -14,3 +14,24 @@ extension LightManager {
     }
 }
 #endif
+
+#if os(macOS)
+/// Where LumenDesk's quick controls live (fork): Control Center (controls the user adds there,
+/// macOS 26+) or LumenDesk's own menu bar icon. Only one is shown, Control Center by default.
+enum NativeControlsLocation: String, CaseIterable, Identifiable {
+    case controlCenter
+    case menuBar
+
+    static let storageKey = "Native.controlsLocation"
+
+    static var isControlCenterAvailable: Bool {
+        if #available(macOS 26, *) { return true }
+        return false
+    }
+
+    static var defaultValue: Self { isControlCenterAvailable ? .controlCenter : .menuBar }
+
+    var id: Self { self }
+    var title: String { self == .controlCenter ? "Control Center" : "Menu Bar" }
+}
+#endif

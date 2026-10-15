@@ -15,6 +15,7 @@ struct LumenDeskApp: App {
     @StateObject private var networkGate: NativeNetworkGate
     @StateObject private var shortcuts: NativeShortcutCenter
     @StateObject private var macEvents: NativeMacEvents
+    @AppStorage(NativeControlsLocation.storageKey) private var controlsLocation = NativeControlsLocation.defaultValue
     #endif
 
     init() {
@@ -26,7 +27,12 @@ struct LumenDeskApp: App {
         _networkGate = StateObject(wrappedValue: services.networkGate)
         _shortcuts = StateObject(wrappedValue: services.shortcuts)
         _macEvents = StateObject(wrappedValue: services.macEvents)
-        if !AppServices.isRunningTests { services.controlsBridge.start() }
+        if !AppServices.isRunningTests {
+            services.controlsBridge.start()
+            // Start at launch: with controls in Control Center there may be no menu bar icon or
+            // window to start the services on appear (e.g. a login launch).
+            DispatchQueue.main.async { AppServices.shared.startNative() }
+        }
         #endif
     }
 
@@ -95,7 +101,15 @@ struct LumenDeskApp: App {
                 .environmentObject(macEvents)
         }
 
-        MenuBarExtra {
+        MenuBarExtra(isInserted: Binding(
+            get: { controlsLocation == .menuBar || !NativeControlsLocation.isControlCenterAvailable },
+            // Removing the icon from the menu bar (⌘-drag) switches to Control Center. Write only
+            // on a real change: SwiftUI also calls this while the icon is already hidden, and an
+            // unconditional write re-renders the scene and loops.
+            set: { inserted in
+                if !inserted, controlsLocation != .controlCenter { controlsLocation = .controlCenter }
+            }
+        )) {
             NativeMenuBarView()
                 .environmentObject(manager)
                 .environmentObject(goveeBluetooth)
