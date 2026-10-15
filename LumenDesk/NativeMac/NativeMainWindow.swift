@@ -76,9 +76,9 @@ struct NativeMainWindow: View {
                 Button {
                     pairing = true
                 } label: {
-                    Label("Add Bluetooth Light", systemImage: "plus")
+                    Label("Add Light", systemImage: "plus")
                 }
-                .help("Add a Govee light over Bluetooth")
+                .help("Add a light")
             }
             ToolbarItem {
                 Button {
@@ -95,9 +95,9 @@ struct NativeMainWindow: View {
         .sheet(isPresented: $pairing) {
             // Default to the room being viewed.
             if case .room(let roomID) = selection {
-                NativeBluetoothPairingSheet(roomID: roomID)
+                NativeAddLightSheet(roomID: roomID)
             } else {
-                NativeBluetoothPairingSheet()
+                NativeAddLightSheet()
             }
         }
         .nativeRenameLightAlert(renamingLight, isPresented: Binding(
