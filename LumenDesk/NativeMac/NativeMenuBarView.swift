@@ -16,6 +16,7 @@ struct NativeMenuBarView: View {
     @EnvironmentObject private var bluetooth: GoveeBluetoothController
     @EnvironmentObject private var networkGate: NativeNetworkGate
     @EnvironmentObject private var shortcuts: NativeShortcutCenter
+    @EnvironmentObject private var macEvents: NativeMacEvents
     @Environment(\.openWindow) private var openWindow
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
 
@@ -107,7 +108,9 @@ struct NativeMenuBarView: View {
             .padding(6)
         }
         .frame(width: 300)
-        .onAppear { manager.startNative(bluetooth: bluetooth, gate: networkGate, shortcuts: shortcuts) }
+        .onAppear {
+            manager.startNative(bluetooth: bluetooth, gate: networkGate, shortcuts: shortcuts, macEvents: macEvents)
+        }
     }
 }
 

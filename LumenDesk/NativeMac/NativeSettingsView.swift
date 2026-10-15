@@ -10,6 +10,8 @@ struct NativeSettingsView: View {
                 .tabItem { Label("Network", systemImage: "network") }
             NativeShortcutsSettings()
                 .tabItem { Label("Shortcuts", systemImage: "command") }
+            NativeAutomationsSettings()
+                .tabItem { Label("Automations", systemImage: "moon") }
         }
         .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
@@ -68,6 +70,47 @@ private struct NativeGeneralSettings: View {
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: $0)
                 set(parts.hour ?? hour, parts.minute ?? minute)
             })
+    }
+}
+
+private struct NativeAutomationsSettings: View {
+    @EnvironmentObject private var manager: LightManager
+    @AppStorage(NativeMacEventSettings.offOnSleepKey) private var offOnSleep = false
+    @AppStorage(NativeMacEventSettings.sleepScopeKey) private var sleepScope = NativeAutomationScope.all
+    @AppStorage(NativeMacEventSettings.offOnLockKey) private var offOnLock = false
+    @AppStorage(NativeMacEventSettings.lockScopeKey) private var lockScope = NativeAutomationScope.all
+    @AppStorage(NativeMacEventSettings.restoreKey) private var restore = true
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Turn lights off when the Mac sleeps", isOn: $offOnSleep)
+                scopePicker($sleepScope).disabled(!offOnSleep)
+            }
+            Section {
+                Toggle("Turn lights off when the screen locks", isOn: $offOnLock)
+                scopePicker($lockScope).disabled(!offOnLock)
+            } footer: {
+                Text("Switching to another user counts as locking.")
+            }
+            Section {
+                Toggle("Turn them back on when the Mac wakes or unlocks", isOn: $restore)
+            } footer: {
+                Text("Only the lights these automations turned off come back on, once the Mac is awake and unlocked. Time-based automations, including sunrise and sunset, are room schedules.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    /// "All Lights" or a room. A deleted room shows (and acts) as all lights.
+    private func scopePicker(_ stored: Binding<String>) -> some View {
+        Picker("Lights", selection: Binding(
+            get: { NativeAutomationScope.stored(NativeAutomationScope.scope(from: stored.wrappedValue, rooms: manager.rooms)) },
+            set: { stored.wrappedValue = $0 }
+        )) {
+            Text("All Lights").tag(NativeAutomationScope.all)
+            ForEach(manager.rooms) { Text($0.name).tag($0.id.uuidString) }
+        }
     }
 }
 

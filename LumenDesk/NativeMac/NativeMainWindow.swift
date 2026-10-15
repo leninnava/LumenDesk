@@ -16,6 +16,7 @@ struct NativeMainWindow: View {
     @EnvironmentObject private var bluetooth: GoveeBluetoothController
     @EnvironmentObject private var networkGate: NativeNetworkGate
     @EnvironmentObject private var shortcuts: NativeShortcutCenter
+    @EnvironmentObject private var macEvents: NativeMacEvents
     @State private var selection: NativeSidebarItem? = .all
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
     @State private var addingRoom = false
@@ -119,7 +120,9 @@ struct NativeMainWindow: View {
         ) { name in
             if let room = renamingRoom { manager.renameRoom(room.id, to: name) }
         }
-        .onAppear { manager.startNative(bluetooth: bluetooth, gate: networkGate, shortcuts: shortcuts) }
+        .onAppear {
+            manager.startNative(bluetooth: bluetooth, gate: networkGate, shortcuts: shortcuts, macEvents: macEvents)
+        }
     }
 
     @ViewBuilder private var detail: some View {
