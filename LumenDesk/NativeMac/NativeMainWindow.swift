@@ -2,6 +2,7 @@
 import SwiftUI
 
 enum NativeSidebarItem: Hashable {
+    case overview
     case all
     case scenes
     case music
@@ -15,17 +16,19 @@ struct NativeMainWindow: View {
     @EnvironmentObject private var manager: LightManager
     @EnvironmentObject private var bluetooth: GoveeBluetoothController
     @EnvironmentObject private var networkGate: NativeNetworkGate
-    @State private var selection: NativeSidebarItem? = .all
+    @State private var selection: NativeSidebarItem? = .overview
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
     @State private var addingRoom = false
     @State private var renamingRoom: Room?
     @State private var renamingLight: LightDevice?
-    @State private var pairing = false
+    /// The open Add Light sheet and the room it starts with.
+    @State private var addingLight: NativeAddLightRequest?
 
     var body: some View {
         NavigationSplitView {
             List(selection: $selection) {
                 Section {
+                    Label("Overview", systemImage: "house").tag(NativeSidebarItem.overview)
                     Label("All Lights", systemImage: "lightbulb.2").tag(NativeSidebarItem.all)
                     Label("Scenes", systemImage: "photo.on.rectangle").tag(NativeSidebarItem.scenes)
                     Label("Music", systemImage: "music.note").tag(NativeSidebarItem.music)
@@ -38,7 +41,7 @@ struct NativeMainWindow: View {
                             .contextMenu {
                                 Button("Rename…") { renamingRoom = room }
                                 Button("Delete Room", role: .destructive) {
-                                    if selection == .room(room.id) { selection = .all }
+                                    if selection == .room(room.id) { selection = .overview }
                                     manager.deleteRoom(room.id)
                                 }
                             }
@@ -80,7 +83,12 @@ struct NativeMainWindow: View {
             }
             ToolbarItem {
                 Button {
-                    pairing = true
+                    // Default to the room being viewed.
+                    if case .room(let roomID) = selection {
+                        addingLight = NativeAddLightRequest(roomID: roomID)
+                    } else {
+                        addingLight = NativeAddLightRequest()
+                    }
                 } label: {
                     Label("Add Light", systemImage: "plus")
                 }
@@ -95,16 +103,14 @@ struct NativeMainWindow: View {
                 .help("Scan for lights (⌘R)")
                 .disabled(manager.isScanning)
             }
+            ToolbarItem {
+                NativeSettingsButton()
+            }
         }
         .navigationSubtitle(manager.isScanning ? "Scanning…" : "")
         .managedActionConfirmations(manager)
-        .sheet(isPresented: $pairing) {
-            // Default to the room being viewed.
-            if case .room(let roomID) = selection {
-                NativeAddLightSheet(roomID: roomID)
-            } else {
-                NativeAddLightSheet()
-            }
+        .sheet(item: $addingLight) { request in
+            NativeAddLightSheet(roomID: request.roomID)
         }
         .nativeRenameLightAlert(renamingLight, isPresented: Binding(
             get: { renamingLight != nil }, set: { if !$0 { renamingLight = nil } }), manager: manager)
@@ -144,8 +150,14 @@ struct NativeMainWindow: View {
             NativeMusicView()
         case .schedules:
             NativeSchedulesView()
-        case .all, nil:
+        case .all:
             NativeGroupDetailView(title: "All Lights", scope: .all, lights: manager.devices, selection: $selection)
+        case .overview, nil:
+            NativeOverviewView(
+                selection: $selection,
+                onAddLight: { addingLight = NativeAddLightRequest(roomID: $0) },
+                onAddRoom: { addingRoom = true }
+            )
         }
     }
 
@@ -189,6 +201,31 @@ struct NativeMainWindow: View {
             }
             .padding(10)
             .background(.bar)
+        }
+    }
+}
+
+/// A request to show the Add Light sheet, starting with `roomID` chosen.
+private struct NativeAddLightRequest: Identifiable {
+    let id = UUID()
+    var roomID: UUID?
+}
+
+/// Toolbar gear that opens Settings (⌘, keeps working through the app menu).
+private struct NativeSettingsButton: View {
+    var body: some View {
+        if #available(macOS 14.0, *) {
+            SettingsLink {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .help("Open Settings: general, network, shortcuts and automations (⌘,)")
+        } else {
+            Button {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            } label: {
+                Label("Settings", systemImage: "gearshape")
+            }
+            .help("Open Settings: general, network, shortcuts and automations (⌘,)")
         }
     }
 }

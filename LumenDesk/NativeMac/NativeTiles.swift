@@ -18,8 +18,13 @@ struct NativeLightTile: View {
     @EnvironmentObject private var manager: LightManager
     @ObservedObject var device: LightDevice
     var compact = false
+    /// Spells out what to do about a light that stopped answering, and labels the open button
+    /// "Details" instead of a bare icon. Used on the Overview.
+    var explained = false
     var onOpen: (() -> Void)?
     @State private var renaming = false
+
+    private var status: String { nativeStatusText(device, detailed: explained) }
 
     var body: some View {
         Button {
@@ -34,9 +39,10 @@ struct NativeLightTile: View {
                     .font(compact ? .callout.weight(.medium) : .body.weight(.medium))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                Text(nativeStatusText(device))
+                Text(status)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, minHeight: compact ? 70 : 96, alignment: .topLeading)
             .padding(compact ? 10 : 12)
@@ -47,7 +53,8 @@ struct NativeLightTile: View {
         }
         .buttonStyle(.plain)
         .help(device.isOn ? "Turn off \(device.label)" : "Turn on \(device.label)")
-        .accessibilityLabel("\(device.label), \(nativeStatusText(device))")
+        .accessibilityLabel("\(device.label), \(status)")
+        .accessibilityHint(device.isOn ? "Turns the light off" : "Turns the light on")
         .contextMenu {
             if let onOpen {
                 Button("Open", action: onOpen)
@@ -59,7 +66,13 @@ struct NativeLightTile: View {
         }
         .nativeRenameLightAlert(device, isPresented: $renaming, manager: manager)
         .overlay(alignment: .topTrailing) {
-            if let onOpen {
+            if let onOpen, explained {
+                Button("Details", action: onOpen)
+                    .controlSize(.small)
+                    .padding(8)
+                    .help("Colour, temperature, effects and settings for \(device.label)")
+                    .accessibilityLabel("Details for \(device.label)")
+            } else if let onOpen {
                 Button(action: onOpen) {
                     Image(systemName: "info.circle").foregroundStyle(.secondary)
                 }

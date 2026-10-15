@@ -11,6 +11,8 @@ struct NativeGroupDetailView: View {
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
 
     private var ids: Set<String> { Set(lights.map(\.id)) }
+    /// "every light" or "every light in this room", for the captions under each control.
+    private var everyLight: String { scope == .all ? "every light" : "every light in this room" }
 
     var body: some View {
         Form {
@@ -29,21 +31,25 @@ struct NativeGroupDetailView: View {
                         set: { manager.setPower(deviceIDs: ids, on: $0) }
                     )) {
                         Text(title).font(.title3.weight(.semibold))
-                        Text(manager.aggregatePowerState(for: lights).title)
+                        Text("\(manager.aggregatePowerState(for: lights).title) · switches \(everyLight) on or off")
                     }
                     .toggleStyle(.switch)
 
-                    NativeGroupBrightnessSlider(lights: lights)
+                    NativeGroupBrightnessSlider(lights: lights, caption: "Sets \(everyLight) to the same brightness",
+                                                showsPercent: true)
 
-                    NativeColorPicker(title: "Color", color: lights.first?.color ?? .white) {
+                    NativeColorPicker(title: "Color", caption: "Sets \(everyLight) to this colour",
+                                      color: lights.first?.color ?? .white) {
                         manager.setColor(deviceIDs: ids, color: $0)
                     }
 
-                    NativeKelvinSlider(kelvin: lights.first?.kelvin ?? 4000, range: 2500...9000) {
+                    NativeKelvinSlider(kelvin: lights.first?.kelvin ?? 4000,
+                                       caption: "Sets \(everyLight) to white, from warm (yellow) to cool (blue)",
+                                       range: 2500...9000) {
                         manager.setKelvin(deviceIDs: ids, kelvin: $0)
                     }
 
-                    LabeledContent("Theme") {
+                    LabeledContent {
                         Menu("Apply") {
                             ForEach(LightingTheme.Category.allCases, id: \.self) { category in
                                 Menu(category.rawValue) {
@@ -54,6 +60,10 @@ struct NativeGroupDetailView: View {
                             }
                         }
                         .fixedSize()
+                    } label: {
+                        Text("Theme")
+                        Text("Spreads a ready-made set of colours across \(everyLight)")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
 

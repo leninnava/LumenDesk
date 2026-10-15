@@ -17,10 +17,10 @@ struct NativeStatusIcon: View {
     }
 }
 
-/// "On · 62%", "Off", or "Not responding".
-func nativeStatusText(_ device: LightDevice) -> String {
-    if device.isStale { return "Not responding" }
-    return device.isOn ? "On · \(Int((device.brightness * 100).rounded()))%" : "Off"
+/// "On · 62%", "Off", or "Not responding" (with a hint to check power when `detailed`).
+func nativeStatusText(_ device: LightDevice, detailed: Bool = false) -> String {
+    NativeOverviewSummary.lightStatus(isOn: device.isOn, brightness: device.brightness,
+                                      isStale: device.isStale, detailed: detailed)
 }
 
 /// Previews brightness while dragging (the engine debounces sends) and commits on release.
@@ -50,6 +50,10 @@ struct NativeBrightnessSlider: View {
 struct NativeGroupBrightnessSlider: View {
     @EnvironmentObject private var manager: LightManager
     let lights: [LightDevice]
+    /// Explains what the slider changes, under its label.
+    var caption: String?
+    /// Shows the value as a percentage after the slider, updating while dragging.
+    var showsPercent = false
     @State private var value: Double = 1
 
     private var average: Double {
@@ -57,18 +61,36 @@ struct NativeGroupBrightnessSlider: View {
     }
 
     var body: some View {
-        Slider(
-            value: $value,
-            in: 0.01...1,
-            label: { Text("Brightness") },
-            minimumValueLabel: { Image(systemName: "sun.min").foregroundStyle(.secondary) },
-            maximumValueLabel: { Image(systemName: "sun.max").foregroundStyle(.secondary) },
-            onEditingChanged: { editing in
-                if !editing { manager.setBrightness(deviceIDs: Set(lights.map(\.id)), value: value) }
+        HStack {
+            Slider(
+                value: $value,
+                in: 0.01...1,
+                label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Brightness")
+                        if let caption {
+                            Text(caption).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                },
+                minimumValueLabel: { Image(systemName: "sun.min").foregroundStyle(.secondary) },
+                maximumValueLabel: { Image(systemName: "sun.max").foregroundStyle(.secondary) },
+                onEditingChanged: { editing in
+                    if !editing { manager.setBrightness(deviceIDs: Set(lights.map(\.id)), value: value) }
+                }
+            )
+            .accessibilityValue(NativeOverviewSummary.percent(value))
+            if showsPercent {
+                Text(NativeOverviewSummary.percent(value))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 38, alignment: .trailing)
+                    .accessibilityHidden(true)
             }
-        )
+        }
         .onAppear { value = average }
         .onChange(of: lights.map(\.id)) { _ in value = average }
+        .onChange(of: average) { new in value = new }
     }
 }
 
@@ -76,6 +98,8 @@ struct NativeGroupBrightnessSlider: View {
 /// are sent once they settle instead of flooding the light.
 struct NativeColorPicker: View {
     let title: String
+    /// Explains what picking a colour changes, under the title.
+    var caption: String?
     let color: Color
     let onCommit: (Color) -> Void
 
@@ -83,7 +107,14 @@ struct NativeColorPicker: View {
     @State private var pending: Task<Void, Never>?
 
     var body: some View {
-        ColorPicker(title, selection: $draft, supportsOpacity: false)
+        ColorPicker(selection: $draft, supportsOpacity: false) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                if let caption {
+                    Text(caption).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
             .onAppear { draft = color }
             .onChange(of: color) { external in
                 if external.rgbDistance(to: draft) > 0.01 { draft = external }
@@ -103,6 +134,8 @@ struct NativeColorPicker: View {
 /// White temperature from warm to cool; sends when the drag ends.
 struct NativeKelvinSlider: View {
     let kelvin: Int
+    /// Explains what the slider changes, under its label.
+    var caption: String?
     let range: ClosedRange<Double>
     let onCommit: (Int) -> Void
     @State private var value: Double = 4000
@@ -124,6 +157,9 @@ struct NativeKelvinSlider: View {
         } label: {
             Text("Temperature")
             Text("\(Int(value)) K").monospacedDigit()
+            if let caption {
+                Text(caption).font(.caption).foregroundStyle(.secondary)
+            }
         }
         .onAppear { value = min(max(Double(kelvin), range.lowerBound), range.upperBound) }
     }
