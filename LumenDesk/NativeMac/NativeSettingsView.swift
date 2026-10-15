@@ -23,6 +23,7 @@ private struct NativeGeneralSettings: View {
 
     var body: some View {
         Form {
+            NativeLaunchAtLoginSection()
             Section {
                 Picker("Show lights as", selection: $layout) {
                     ForEach(NativeDeviceLayout.allCases) { Text($0.title).tag($0) }
