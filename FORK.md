@@ -67,6 +67,35 @@ Signed builds run in the App Sandbox, so settings live in
 - Only one app can own UDP 4002. Quit other Govee LAN tools (Home Assistant, govee2mqtt, HomeBar)
   before running LumenDesk.
 
+## Security
+
+Reviewed 2026-10-15 (findings F1–F12). Fixed in the fork, not yet proposed upstream:
+
+- **F1 (High, upstream code):** a Govee scan reply's `ip` text went to `NSLog` as its format
+  string, so one UDP packet from anyone on the LAN crashed the app. Now passed as an argument.
+- **F2:** a LAN reply with a `ble:` device ID could create a Bluetooth-only light and make the app
+  connect to any nearby peripheral by that name. Govee device IDs must now be MAC-style,
+  Bluetooth-only status also requires the `Bluetooth` address, and the Bluetooth controller
+  refuses names that weren't paired.
+- **F3/F5:** discovery (multicast, broadcast and a unicast sweep of the subnet) and 30-second
+  polling ran on every network, including Nanoleaf requests that carry its token in the URL.
+  LumenDesk now does this only on networks the user marked as home (Settings → Network); a manual
+  scan still works anywhere. Networks are recognised by subnet and router IP, because the router's
+  MAC isn't readable from the app, so a network using the same range can pass as home.
+- **F4:** scene parameters over ~4 KB crashed frame encoding. Parameters over 2 KB, responses over
+  2 MB and catalogues over 500 scenes are now rejected.
+- **F6:** Govee scan replies are accepted only for 15 s after a scan, so unsolicited replies can't
+  add lights or move an existing light to another address.
+- **F7:** Bluetooth lights are bound to the peripheral identifier recorded at pairing (lights
+  paired earlier bind on first connection), advert names must match Govee's naming schemes, the
+  peripheral and pairing lists are capped, and reconnects after a failure wait 5 s.
+- **F8 (partial):** the UDP receive loop handles at most 64 datagrams per wake-up.
+- **F12:** `build-signed.sh` now fails when the build fails.
+
+Still open: LIFX accepts `source == 0` and its target maps are unbounded (F8); Nanoleaf's event
+stream keeps retrying a saved address after leaving a home network (F5, no Nanoleaf here to
+test); `com.apple.security.device.midi` may not be a real entitlement (F11).
+
 ## Plan
 
 1. Native macOS interface and a working menu bar extra. *(done)*
