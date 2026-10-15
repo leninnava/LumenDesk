@@ -23,10 +23,11 @@ struct NativeRoomMenu: View {
     }
 }
 
-/// Asks for a room name; used for both creating and renaming.
+/// Asks for a name; used for creating and renaming rooms and renaming lights.
 struct NativeRoomNameAlert: ViewModifier {
     @Binding var isPresented: Bool
     let title: String
+    var placeholder = "Room name"
     let initialName: String
     let confirmTitle: String
     let onConfirm: (String) -> Void
@@ -35,7 +36,7 @@ struct NativeRoomNameAlert: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(title, isPresented: $isPresented) {
-                TextField("Room name", text: $name)
+                TextField(placeholder, text: $name)
                 Button(confirmTitle) {
                     let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !trimmed.isEmpty { onConfirm(trimmed) }
@@ -49,10 +50,20 @@ struct NativeRoomNameAlert: ViewModifier {
 }
 
 extension View {
-    func nativeRoomNameAlert(isPresented: Binding<Bool>, title: String, initialName: String = "",
-                             confirmTitle: String, onConfirm: @escaping (String) -> Void) -> some View {
-        modifier(NativeRoomNameAlert(isPresented: isPresented, title: title, initialName: initialName,
-                                     confirmTitle: confirmTitle, onConfirm: onConfirm))
+    func nativeRoomNameAlert(isPresented: Binding<Bool>, title: String, placeholder: String = "Room name",
+                             initialName: String = "", confirmTitle: String,
+                             onConfirm: @escaping (String) -> Void) -> some View {
+        modifier(NativeRoomNameAlert(isPresented: isPresented, title: title, placeholder: placeholder,
+                                     initialName: initialName, confirmTitle: confirmTitle, onConfirm: onConfirm))
+    }
+
+    /// "Rename…" prompt for a light.
+    func nativeRenameLightAlert(_ device: LightDevice?, isPresented: Binding<Bool>,
+                                manager: LightManager) -> some View {
+        nativeRoomNameAlert(isPresented: isPresented, title: "Rename Light", placeholder: "Light name",
+                            initialName: device?.label ?? "", confirmTitle: "Rename") { name in
+            if let device { manager.setCustomName(device.id, name: name) }
+        }
     }
 }
 #endif

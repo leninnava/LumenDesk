@@ -61,12 +61,53 @@ enum GoveeBluetoothProtocol {
         return uploads + [select]
     }
 
+    // MARK: Basic control (lights reachable only over Bluetooth)
+
+    // Checked on the H6008 bulb: colour mode 0x0d, brightness 0–100, no session encryption.
+
+    static func powerFrame(on: Bool) -> [UInt8] {
+        GoveeProtocol.blePacket([0x33, 0x01, on ? 1 : 0])
+    }
+
+    static func brightnessFrame(percent: Int) -> [UInt8] {
+        GoveeProtocol.blePacket([0x33, 0x04, UInt8(min(max(percent, 1), 100))])
+    }
+
+    static func colorFrame(r: Int, g: Int, b: Int) -> [UInt8] {
+        GoveeProtocol.blePacket([0x33, 0x05, 0x0D, clamp(r), clamp(g), clamp(b)])
+    }
+
+    /// White at a colour temperature: the RGB the bulb should approximate, then kelvin (big-endian).
+    static func whiteFrame(kelvin: Int) -> [UInt8] {
+        let k = min(max(kelvin, 2000), 9000)
+        let rgb = rgb(forKelvin: k)
+        return GoveeProtocol.blePacket([0x33, 0x05, 0x0D, clamp(rgb.r), clamp(rgb.g), clamp(rgb.b),
+                                        UInt8(k >> 8), UInt8(k & 0xFF)])
+    }
+
+    /// Approximate RGB of a black-body colour temperature (Tanner Helland's fit).
+    static func rgb(forKelvin kelvin: Int) -> (r: Int, g: Int, b: Int) {
+        let t = Double(kelvin) / 100
+        let r = t <= 66 ? 255 : 329.698727446 * pow(t - 60, -0.1332047592)
+        let g = t <= 66 ? 99.4708025861 * log(t) - 161.1195681661 : 288.1221695283 * pow(t - 60, -0.0755148492)
+        let b = t >= 66 ? 255 : (t <= 19 ? 0 : 138.5177312231 * log(t - 10) - 305.0447927307)
+        return (Int(r.rounded()), Int(g.rounded()), Int(b.rounded()))
+    }
+
+    private static func clamp(_ value: Int) -> UInt8 { UInt8(min(max(value, 0), 255)) }
+
     // MARK: Replies
 
     enum Reply: Equatable {
         case power(Bool)
         case brightness(Int)
         case mode([UInt8])
+    }
+
+    /// Colour or white reported in a `0d` mode reply (`aa 05 0d r g b k_hi k_lo`).
+    static func colorState(fromMode mode: [UInt8]) -> (r: Int, g: Int, b: Int, kelvin: Int)? {
+        guard mode.count >= 6, mode[0] == 0x0D else { return nil }
+        return (Int(mode[1]), Int(mode[2]), Int(mode[3]), Int(mode[4]) << 8 | Int(mode[5]))
     }
 
     static func parse(_ frame: [UInt8]) -> Reply? {

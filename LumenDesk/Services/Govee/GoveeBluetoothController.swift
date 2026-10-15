@@ -1,12 +1,34 @@
 import CoreBluetooth
 import Foundation
 
-/// Sends Govee frames over Bluetooth for lights that ignore them on LAN (fork).
+/// How LightManager reaches Govee lights that exist only over Bluetooth (fork).
+protocol GoveeBluetoothLightTransport: AnyObject {
+    func setPower(_ device: LightDevice, on: Bool)
+    func setBrightness(_ device: LightDevice, percent: Int)
+    func setColor(_ device: LightDevice, r: Int, g: Int, b: Int)
+    func setKelvin(_ device: LightDevice, kelvin: Int)
+    func refresh(_ device: LightDevice)
+}
+
+extension LightDevice {
+    /// A Govee light added by Bluetooth pairing; its `backendID` is `ble:<advert name>`.
+    var isBluetoothOnly: Bool { brand == .govee && backendID.hasPrefix("ble:") }
+}
+
+/// Govee lights over Bluetooth (fork).
 ///
-/// One link per light, opened on first use and kept alive with the status query the Govee app
-/// sends, because these lights advertise only intermittently: reconnecting per command can wait
-/// half a minute. A link closes after `idleTimeout` without commands so the Govee app can
-/// connect again. Bluetooth permission is only requested once a light first needs it.
+/// Two jobs: scenes and segments for LAN lights whose firmware ignores them over Wi-Fi (H60A1),
+/// and full control of lights that have no LAN API at all (H6008 bulbs).
+///
+/// It never adds or connects to a light on its own. Bluetooth-only lights are paired by the user
+/// from a pairing scan (`startPairingScan`); otherwise it scans only to find lights it already
+/// knows, and only connects to those.
+///
+/// One link per light, kept alive with the status query the Govee app sends, because these lights
+/// advertise only intermittently: reconnecting per command can wait half a minute. Links for LAN
+/// lights close after `idleTimeout` without commands so the Govee app can connect again; links for
+/// Bluetooth-only lights stay open, since that is their only connection. Bluetooth permission is
+/// requested the first time a light needs it or discovery starts.
 ///
 /// All CoreBluetooth callbacks arrive on the main queue.
 final class GoveeBluetoothController: NSObject, ObservableObject {
@@ -29,13 +51,30 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
     /// Keyed by `LightDevice.id`.
     @Published private(set) var states: [String: LinkState] = [:]
 
+    /// A Govee light heard during a pairing scan.
+    struct NearbyLight: Identifiable, Equatable {
+        /// Advert name, such as `ihoment_H6008_00B7`.
+        let name: String
+        let sku: String
+        var rssi: Int
+        var id: String { name }
+    }
+
+    /// Govee lights heard since `startPairingScan`, strongest signal first.
+    @Published private(set) var nearby: [NearbyLight] = []
+    /// A status reply from a light, keyed by `LightDevice.id`.
+    var onReply: ((_ deviceID: String, _ reply: GoveeBluetoothProtocol.Reply) -> Void)?
+
     var idleTimeout: TimeInterval = 300
     private let keepAliveInterval: TimeInterval = 2
     private let frameGap: TimeInterval = 0.06
+    private let maxPendingFrames = 24
 
     private final class Link {
-        let sku: String?
-        let deviceID: String
+        /// Whether an advert name belongs to this light.
+        let matches: (String) -> Bool
+        /// Bluetooth-only lights keep their link open for as long as the app runs.
+        let persistent: Bool
         /// Nil until a scan finds the light's advert.
         var peripheral: CBPeripheral?
         var control: CBCharacteristic?
@@ -44,15 +83,18 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
         var pending: [[UInt8]] = []
         var lastUse = Date()
 
-        init(sku: String?, deviceID: String) {
-            self.sku = sku
-            self.deviceID = deviceID
+        init(persistent: Bool, matches: @escaping (String) -> Bool) {
+            self.persistent = persistent
+            self.matches = matches
         }
     }
 
     private var central: CBCentralManager?
     private var links: [String: Link] = [:]
     private var keepAliveTimer: Timer?
+    private var pairingScan = false
+    /// Peripherals seen in adverts, by advert name, so a new link can connect without rescanning.
+    private var seenPeripherals: [String: CBPeripheral] = [:]
 
     private let serviceID = CBUUID(string: GoveeBluetoothProtocol.serviceUUID)
     private let controlID = CBUUID(string: GoveeBluetoothProtocol.controlUUID)
@@ -62,7 +104,27 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
 
     /// Whether this light's scenes and segments must go over Bluetooth.
     static func requiresBluetooth(_ device: LightDevice) -> Bool {
-        device.brand == .govee && GoveeBluetoothProtocol.framesOnlyOverBluetooth.contains(device.sku ?? "")
+        device.isBluetoothOnly
+            || (device.brand == .govee && GoveeBluetoothProtocol.framesOnlyOverBluetooth.contains(device.sku ?? ""))
+    }
+
+    /// Lists nearby Govee lights in `nearby` until `stopPairingScan`. Nothing is connected.
+    func startPairingScan() {
+        pairingScan = true
+        nearby = []
+        ensureCentral()
+        startScanIfNeeded()
+    }
+
+    func stopPairingScan() {
+        pairingScan = false
+        nearby = []
+        if !needsScan { central?.stopScan() }
+    }
+
+    /// Disconnects and drops the light's link.
+    func forget(_ device: LightDevice) {
+        close(device.id)
     }
 
     /// Starts connecting ahead of a command, e.g. when the light's controls appear.
@@ -71,8 +133,7 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
         link(for: device).lastUse = Date()
     }
 
-    /// Queues `frames` for the light; they are written once the link is ready. A newer batch
-    /// replaces one still waiting, so the light ends up in the last requested state.
+    /// Queues `frames` for the light; they are written in order once the link is ready.
     func send(_ frames: [[UInt8]], to device: LightDevice) {
         guard device.brand == .govee, !frames.isEmpty else { return }
         let link = link(for: device)
@@ -80,20 +141,34 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
         if link.ready {
             write(frames, to: link)
         } else {
-            link.pending = frames
+            link.pending = Array((link.pending + frames).suffix(maxPendingFrames))
         }
     }
 
     // MARK: Links
 
+    private func ensureCentral() {
+        // The first call asks for Bluetooth permission; scanning starts once it's granted.
+        if central == nil { central = CBCentralManager(delegate: self, queue: .main) }
+    }
+
     private func link(for device: LightDevice) -> Link {
         if let link = links[device.id] { return link }
-        let link = Link(sku: device.sku, deviceID: device.backendID)
+        let link: Link
+        if device.isBluetoothOnly {
+            let name = String(device.backendID.dropFirst("ble:".count))
+            link = Link(persistent: true) { $0 == name }
+        } else {
+            let sku = device.sku, deviceID = device.backendID
+            link = Link(persistent: false) {
+                GoveeBluetoothProtocol.advertName($0, matchesSKU: sku, deviceID: deviceID)
+            }
+        }
         links[device.id] = link
         states[device.id] = .searching
-        if central == nil {
-            // The first use asks for Bluetooth permission; scanning starts once it's granted.
-            central = CBCentralManager(delegate: self, queue: .main)
+        ensureCentral()
+        if let peripheral = seenPeripherals.first(where: { link.matches($0.key) })?.value {
+            attach(peripheral, to: link, id: device.id)
         } else {
             startScanIfNeeded()
         }
@@ -101,9 +176,19 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
         return link
     }
 
+    private func attach(_ peripheral: CBPeripheral, to link: Link, id: String) {
+        link.peripheral = peripheral
+        states[id] = .connecting
+        peripheral.delegate = self
+        if let central, central.state == .poweredOn { central.connect(peripheral) }
+    }
+
+    private var needsScan: Bool {
+        pairingScan || links.values.contains(where: { $0.peripheral == nil })
+    }
+
     private func startScanIfNeeded() {
-        guard let central, central.state == .poweredOn, !central.isScanning,
-              links.values.contains(where: { $0.peripheral == nil }) else { return }
+        guard let central, central.state == .poweredOn, !central.isScanning, needsScan else { return }
         // Duplicates on: a light whose first advert lacks its name must still be matched later.
         central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
     }
@@ -150,11 +235,11 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
         }
     }
 
-    /// Keep-alive for ready links, and closing links that went unused.
+    /// Keep-alive for ready links, and closing LAN lights' links that went unused.
     private func tick() {
         let now = Date()
         for (id, link) in links {
-            if now.timeIntervalSince(link.lastUse) > idleTimeout {
+            if !link.persistent, now.timeIntervalSince(link.lastUse) > idleTimeout {
                 close(id)
             } else if link.ready {
                 writeNow(GoveeBluetoothProtocol.keepAlive, to: link)
@@ -163,7 +248,7 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
         if links.isEmpty {
             keepAliveTimer?.invalidate()
             keepAliveTimer = nil
-            central?.stopScan()
+            if !needsScan { central?.stopScan() }
         }
     }
 
@@ -171,6 +256,32 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
         guard let link = links.removeValue(forKey: id) else { return }
         states[id] = nil
         if let peripheral = link.peripheral { central?.cancelPeripheralConnection(peripheral) }
+    }
+}
+
+// MARK: - Transport for Bluetooth-only lights
+
+extension GoveeBluetoothController: GoveeBluetoothLightTransport {
+    func setPower(_ device: LightDevice, on: Bool) {
+        send([GoveeBluetoothProtocol.powerFrame(on: on)], to: device)
+    }
+
+    func setBrightness(_ device: LightDevice, percent: Int) {
+        send([GoveeBluetoothProtocol.brightnessFrame(percent: percent)], to: device)
+    }
+
+    func setColor(_ device: LightDevice, r: Int, g: Int, b: Int) {
+        send([GoveeBluetoothProtocol.colorFrame(r: r, g: g, b: b)], to: device)
+    }
+
+    func setKelvin(_ device: LightDevice, kelvin: Int) {
+        send([GoveeBluetoothProtocol.whiteFrame(kelvin: kelvin)], to: device)
+    }
+
+    func refresh(_ device: LightDevice) {
+        let link = link(for: device)
+        guard link.ready else { return }
+        for query in GoveeBluetoothProtocol.statusQueries { writeNow(query, to: link) }
     }
 }
 
@@ -192,7 +303,7 @@ extension GoveeBluetoothController: CBCentralManagerDelegate {
                 states[id] = .unavailable(problem)
             } else if let peripheral = link.peripheral {
                 states[id] = .connecting
-                // Links that dropped while Bluetooth was off.
+                // Links found earlier, or that dropped while Bluetooth was off.
                 if peripheral.state == .disconnected { central.connect(peripheral) }
             } else {
                 states[id] = .searching
@@ -204,17 +315,23 @@ extension GoveeBluetoothController: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
                         advertisementData: [String: Any], rssi RSSI: NSNumber) {
         let name = (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? peripheral.name ?? ""
-        guard !name.isEmpty,
-              case let (id, link)? = links.first(where: { _, link in
-                  link.peripheral == nil
-                      && GoveeBluetoothProtocol.advertName(name, matchesSKU: link.sku, deviceID: link.deviceID)
-              }) else { return }
+        guard !name.isEmpty, let advert = GoveeBluetoothProtocol.parseName(name) else { return }
+        seenPeripherals[name] = peripheral
 
-        link.peripheral = peripheral
-        states[id] = .connecting
-        peripheral.delegate = self
-        central.connect(peripheral)
-        if !links.values.contains(where: { $0.peripheral == nil }) { central.stopScan() }
+        if pairingScan {
+            let rssi = RSSI.intValue
+            if let index = nearby.firstIndex(where: { $0.name == name }) {
+                // Skip small signal changes to avoid redrawing on every advert.
+                if abs(nearby[index].rssi - rssi) >= 6, rssi < 0 { nearby[index].rssi = rssi }
+            } else {
+                nearby.append(NearbyLight(name: name, sku: advert.sku, rssi: rssi))
+            }
+            nearby.sort { $0.rssi > $1.rssi }
+        }
+        if case let (id, link)? = links.first(where: { $0.value.peripheral == nil && $0.value.matches(name) }) {
+            attach(peripheral, to: link, id: id)
+        }
+        if !needsScan { central.stopScan() }
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -289,6 +406,8 @@ extension GoveeBluetoothController: CBPeripheralDelegate {
             guard let plain = session.decrypt(frame), plain.reduce(0, ^) == 0 else { return }
             frame = plain
         }
-        if GoveeBluetoothProtocol.parse(frame) != nil { markReady(id, link) }
+        guard let reply = GoveeBluetoothProtocol.parse(frame) else { return }
+        markReady(id, link)
+        onReply?(id, reply)
     }
 }

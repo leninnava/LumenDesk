@@ -78,6 +78,8 @@ final class LightManager: ObservableObject {
     private var errorClearTask: Task<Void, Never>?
     private var lifx: LIFXClient?
     private var govee: GoveeClient?
+    /// Fork: Govee lights that exist only over Bluetooth are controlled through this.
+    weak var goveeBluetooth: GoveeBluetoothLightTransport?
     private let nanoleaf: NanoleafClient
     /// Shapes arrangements, orientation, per-panel designs and live output.
     /// Views that draw a wall observe it directly, so a streamed frame never
@@ -519,6 +521,8 @@ final class LightManager: ObservableObject {
             switch d.brand {
             case .nanoleaf: nanoleaf.refresh(d.backendID)
             case .lifx:  lifx?.refresh(macHex: d.backendID)
+            case .govee where d.isBluetoothOnly:
+                goveeBluetooth?.refresh(d)
             case .govee:
                 govee?.refresh(deviceID: d.backendID)
                 // Doubles as a flicker-free stream keepalive: re-push the
@@ -1487,6 +1491,8 @@ final class LightManager: ObservableObject {
             switch device.brand {
             case .nanoleaf: self.nanoleaf.setState(device.backendID, ["on": ["value": on]])
             case .lifx: self.lifx?.setPower(macHex: device.backendID, on: on)
+            case .govee where device.isBluetoothOnly:
+                self.goveeBluetooth?.setPower(device, on: on)
             case .govee:
                 self.govee?.setPower(deviceID: device.backendID, on: on)
                 if on {
@@ -1527,6 +1533,8 @@ final class LightManager: ObservableObject {
                 }
             case .nanoleaf:
                 self.nanoleaf.setState(device.backendID, ["brightness": ["value": NanoleafProtocol.percent(value)]])
+            case .govee where device.isBluetoothOnly:
+                self.goveeBluetooth?.setBrightness(device, percent: Int(value * 100))
             case .govee:
                 self.govee?.setBrightness(deviceID: device.backendID, percent: Int(value * 100))
             }
@@ -1549,6 +1557,9 @@ final class LightManager: ObservableObject {
                 let hsb = color.hsbComponents
                 self.shapes.outputReplaced(device.id, by: .solid)
                 self.nanoleaf.setState(device.backendID, NanoleafProtocol.color(hue: hsb.h, saturation: hsb.s, brightness: device.brightness))
+            case .govee where device.isBluetoothOnly:
+                let rgb = color.rgbComponents
+                self.goveeBluetooth?.setColor(device, r: Int(rgb.r * 255), g: Int(rgb.g * 255), b: Int(rgb.b * 255))
             case .govee:
                 self.markSegmentsInactive(device)
                 let rgb = color.rgbComponents
@@ -1573,6 +1584,8 @@ final class LightManager: ObservableObject {
             case .nanoleaf:
                 self.shapes.outputReplaced(device.id, by: .white)
                 self.nanoleaf.setState(device.backendID, ["ct": ["value": kelvin], "brightness": ["value": NanoleafProtocol.percent(device.brightness)]])
+            case .govee where device.isBluetoothOnly:
+                self.goveeBluetooth?.setKelvin(device, kelvin: kelvin)
             case .govee:
                 self.markSegmentsInactive(device)
                 self.govee?.setColor(deviceID: device.backendID, r: 255, g: 255, b: 255, kelvin: kelvin)
@@ -2348,8 +2361,48 @@ extension LightManager {
 // MARK: - Govee Segment Studio (per-segment control for COB strips, string lights, neon ropes)
 
 extension LightManager {
-    /// Capability detected from the discovery SKU; nil for non-Govee devices
-    /// and Govee models the catalog doesn't recognize.
+    /// Fork: adds a Govee light found only by Bluetooth scan (no LAN API). Its ID is derived from
+    /// the advert name, so room assignments survive relaunches.
+    func addBluetoothGovee(advertName: String, sku: String) {
+        let id = "govee:ble:\(advertName)"
+        guard device(withID: id) == nil else { return }
+        let suffix = String(advertName.suffix(4))
+        upsert(LightDevice(id: id, brand: .govee, backendID: "ble:\(advertName)",
+                           name: "\(sku) \(suffix)", address: "Bluetooth", sku: sku))
+    }
+
+    /// Fork: removes a Bluetooth-only Govee light the user chose to forget, including its room
+    /// assignment and favourite.
+    func removeBluetoothGovee(deviceID: String) {
+        guard let device = device(withID: deviceID), device.isBluetoothOnly else { return }
+        assign(lightID: deviceID, toRoom: nil)
+        if favoriteIDs.contains(deviceID) { favoriteIDs.remove(deviceID) }
+        devices.removeAll { $0.id == deviceID }
+        devicesByID[deviceID] = nil
+        persistApplicationState()
+    }
+
+    /// Fork: applies a Bluetooth status reply to a light, as LAN status replies do.
+    func bluetoothGoveeDidReply(deviceID: String, power: Bool? = nil, brightnessPercent: Int? = nil,
+                                rgb: (r: Int, g: Int, b: Int)? = nil, kelvin: Int? = nil) {
+        guard let device = device(withID: deviceID), device.isBluetoothOnly else { return }
+        let pending = commandPendingIDs.contains(deviceID)
+        if !pending, !isEffectAnimating(deviceID) {
+            if let power, device.isOn != power { device.isOn = power }
+            if let brightnessPercent {
+                let value = Double(min(100, max(0, brightnessPercent))) / 100
+                if abs(device.brightness - value) > 0.001 { device.brightness = value }
+            }
+            if let kelvin, kelvin > 0 {
+                if device.kelvin != kelvin { device.kelvin = kelvin }
+            } else if let rgb {
+                let color = Color(red: Double(rgb.r) / 255, green: Double(rgb.g) / 255, blue: Double(rgb.b) / 255)
+                if device.color.rgbDistance(to: color) > 0.005 { device.color = color }
+            }
+        }
+        markSeen(device, confirmsPendingCommand: pending)
+    }
+
     /// Fork: relays Bluetooth-format frames (Govee scenes) to a light over the LAN `ptReal`
     /// command, through the same paced queue as segment layouts.
     func sendGoveeFrames(_ device: LightDevice, frames: [[UInt8]]) {
@@ -2357,6 +2410,8 @@ extension LightManager {
         govee?.applySegments(deviceID: device.backendID, packets: frames)
     }
 
+    /// Capability detected from the discovery SKU; nil for non-Govee devices
+    /// and Govee models the catalog doesn't recognize.
     func segmentProfile(for device: LightDevice) -> GoveeSegmentProfile? {
         guard device.brand == .govee else { return nil }
         return GoveeSegmentProfile.detect(sku: device.sku)

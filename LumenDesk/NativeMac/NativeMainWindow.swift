@@ -10,10 +10,13 @@ enum NativeSidebarItem: Hashable {
 /// The main window: rooms and lights in a source list, controls in the detail pane.
 struct NativeMainWindow: View {
     @EnvironmentObject private var manager: LightManager
+    @EnvironmentObject private var bluetooth: GoveeBluetoothController
     @State private var selection: NativeSidebarItem? = .all
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
     @State private var addingRoom = false
     @State private var renamingRoom: Room?
+    @State private var renamingLight: LightDevice?
+    @State private var pairing = false
 
     var body: some View {
         NavigationSplitView {
@@ -36,7 +39,9 @@ struct NativeMainWindow: View {
                 }
                 Section("Lights") {
                     ForEach(manager.devices) { device in
-                        NativeSidebarLightRow(device: device).tag(NativeSidebarItem.light(device.id))
+                        NativeSidebarLightRow(device: device)
+                            .tag(NativeSidebarItem.light(device.id))
+                            .contextMenu { Button("Rename…") { renamingLight = device } }
                     }
                 }
             }
@@ -67,6 +72,14 @@ struct NativeMainWindow: View {
             }
             ToolbarItem {
                 Button {
+                    pairing = true
+                } label: {
+                    Label("Add Bluetooth Light", systemImage: "plus")
+                }
+                .help("Add a Govee light over Bluetooth")
+            }
+            ToolbarItem {
+                Button {
                     manager.scan()
                 } label: {
                     Label("Scan for Lights", systemImage: "arrow.clockwise")
@@ -77,6 +90,9 @@ struct NativeMainWindow: View {
         }
         .navigationSubtitle(manager.isScanning ? "Scanning…" : "")
         .managedActionConfirmations(manager)
+        .sheet(isPresented: $pairing) { NativeBluetoothPairingSheet() }
+        .nativeRenameLightAlert(renamingLight, isPresented: Binding(
+            get: { renamingLight != nil }, set: { if !$0 { renamingLight = nil } }), manager: manager)
         .nativeRoomNameAlert(isPresented: $addingRoom, title: "New Room", confirmTitle: "Create") { name in
             manager.createRoom(name: name)
             if let room = manager.rooms.last(where: { $0.name == name }) { selection = .room(room.id) }
@@ -87,7 +103,10 @@ struct NativeMainWindow: View {
         ) { name in
             if let room = renamingRoom { manager.renameRoom(room.id, to: name) }
         }
-        .onAppear { manager.start() }
+        .onAppear {
+            manager.start()
+            manager.connectGoveeBluetooth(bluetooth)
+        }
     }
 
     @ViewBuilder private var detail: some View {

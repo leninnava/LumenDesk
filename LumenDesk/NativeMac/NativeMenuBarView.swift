@@ -13,6 +13,7 @@ struct NativeMenuBarLabel: View {
 /// The menu bar panel: every light with a switch and brightness, plus the usual app items.
 struct NativeMenuBarView: View {
     @EnvironmentObject private var manager: LightManager
+    @EnvironmentObject private var bluetooth: GoveeBluetoothController
     @Environment(\.openWindow) private var openWindow
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
 
@@ -88,7 +89,10 @@ struct NativeMenuBarView: View {
             .padding(6)
         }
         .frame(width: 300)
-        .onAppear { manager.start() }
+        .onAppear {
+            manager.start()
+            manager.connectGoveeBluetooth(bluetooth)
+        }
     }
 }
 

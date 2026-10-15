@@ -19,6 +19,7 @@ struct NativeLightTile: View {
     @ObservedObject var device: LightDevice
     var compact = false
     var onOpen: (() -> Void)?
+    @State private var renaming = false
 
     var body: some View {
         Button {
@@ -49,9 +50,11 @@ struct NativeLightTile: View {
         .accessibilityLabel("\(device.label), \(nativeStatusText(device))")
         .contextMenu {
             if let onOpen { Button("Open", action: onOpen) }
+            Button("Rename…") { renaming = true }
             NativeRoomMenu(device: device)
             Button("Identify") { manager.identify(device) }
         }
+        .nativeRenameLightAlert(device, isPresented: $renaming, manager: manager)
         .overlay(alignment: .topTrailing) {
             if let onOpen {
                 Button(action: onOpen) {

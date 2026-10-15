@@ -4,6 +4,8 @@ import SwiftUI
 /// Controls for one light, as a grouped macOS form.
 struct NativeLightDetailView: View {
     @EnvironmentObject private var manager: LightManager
+    @EnvironmentObject private var bluetooth: GoveeBluetoothController
+    @State private var confirmingForget = false
     @ObservedObject var device: LightDevice
 
     @State private var name = ""
@@ -96,6 +98,16 @@ struct NativeLightDetailView: View {
                     Text(device.lastSeen, style: .relative) + Text(" ago")
                 }
                 Button("Identify") { manager.identify(device) }
+                if device.isBluetoothOnly {
+                    Button("Forget Light…", role: .destructive) { confirmingForget = true }
+                        .confirmationDialog("Forget \(device.label)?", isPresented: $confirmingForget) {
+                            Button("Forget Light", role: .destructive) {
+                                manager.forgetBluetoothLight(device, bluetooth: bluetooth)
+                            }
+                        } message: {
+                            Text("LumenDesk disconnects and stops looking for it. You can add it again later.")
+                        }
+                }
             }
 
             Section {

@@ -93,4 +93,36 @@ final class GoveeBluetoothTests: XCTestCase {
         XCTAssertEqual(scenes.last?.param, Data([1, 2]))
         XCTAssertEqual(scenes.last?.category, "Natural")
     }
+
+    // MARK: Bluetooth-only lights (H6008)
+
+    func testBasicControlFramesMatchHardwareVerifiedH6008Frames() {
+        XCTAssertEqual(hex(GoveeBluetoothProtocol.colorFrame(r: 255, g: 0, b: 0)),
+                       "33 05 0d ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 c4")
+        XCTAssertEqual(hex(GoveeBluetoothProtocol.brightnessFrame(percent: 30)),
+                       "33 04 1e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 29")
+        XCTAssertEqual(Array(GoveeBluetoothProtocol.powerFrame(on: false).prefix(3)), [0x33, 0x01, 0x00])
+    }
+
+    func testBrightnessIsClampedToOneThroughHundred() {
+        XCTAssertEqual(GoveeBluetoothProtocol.brightnessFrame(percent: 0)[2], 1)
+        XCTAssertEqual(GoveeBluetoothProtocol.brightnessFrame(percent: 255)[2], 100)
+    }
+
+    func testWhiteFrameCarriesKelvinBigEndian() {
+        let frame = GoveeBluetoothProtocol.whiteFrame(kelvin: 2700)
+        XCTAssertEqual(Array(frame[0...2]), [0x33, 0x05, 0x0D])
+        XCTAssertEqual(Array(frame[6...7]), [0x0A, 0x8C])
+        XCTAssertEqual(frame[3], 255)  // warm white: full red
+        XCTAssertLessThan(frame[5], frame[4])  // less blue than green
+    }
+
+    func testReadsColourStateFromModeReply() throws {
+        let white = try XCTUnwrap(GoveeBluetoothProtocol.colorState(fromMode: [0x0D, 0xFF, 0xA9, 0x57, 0x0A, 0x8C]))
+        XCTAssertEqual(white.kelvin, 2700)
+        let red = try XCTUnwrap(GoveeBluetoothProtocol.colorState(fromMode: [0x0D, 0xFF, 0x00, 0x00, 0x00, 0x00]))
+        XCTAssertEqual(red.r, 255)
+        XCTAssertEqual(red.kelvin, 0)
+        XCTAssertNil(GoveeBluetoothProtocol.colorState(fromMode: [0x15, 0x01, 0x00]))
+    }
 }
