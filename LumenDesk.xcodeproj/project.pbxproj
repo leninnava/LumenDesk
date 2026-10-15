@@ -28,6 +28,7 @@
 		F800000000000000000262 /* RoomsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000259 /* RoomsWidget.swift */; };
 		F800000000000000000264 /* ControlsSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000263 /* ControlsSnapshotTests.swift */; };
 		F800000000000000000263 /* LumenDeskControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F900000000000000000262 /* LumenDeskControls.appex */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F800000000000000000160 /* GoveeBluetoothIdleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000160 /* GoveeBluetoothIdleTests.swift */; };
 		F800000000000000000017 /* NativeStartup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000017 /* NativeStartup.swift */; };
 		F800000000000000000016 /* NativeNetworkGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000016 /* NativeNetworkGate.swift */; };
 		F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000015 /* NativeBluetoothPairing.swift */; };
@@ -185,6 +186,7 @@
 		F900000000000000000260 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F900000000000000000261 /* LumenDeskControls.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LumenDeskControls.entitlements; sourceTree = "<group>"; };
 		F900000000000000000262 /* LumenDeskControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumenDeskControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F900000000000000000160 /* GoveeBluetoothIdleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoveeBluetoothIdleTests.swift; sourceTree = "<group>"; };
 		F900000000000000000017 /* NativeStartup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStartup.swift; sourceTree = "<group>"; };
 		F900000000000000000016 /* NativeNetworkGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNetworkGate.swift; sourceTree = "<group>"; };
 		F900000000000000000015 /* NativeBluetoothPairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBluetoothPairing.swift; sourceTree = "<group>"; };
@@ -473,6 +475,7 @@
 			isa = PBXGroup;
 			children = (
 				F900000000000000000105 /* NativeScheduleDraftTests.swift */,
+				F900000000000000000160 /* GoveeBluetoothIdleTests.swift */,
 				F900000000000000000011 /* GoveeBluetoothTests.swift */,
 				F900000000000000000263 /* ControlsSnapshotTests.swift */,
 				A300000000000000000004 /* NanoleafTests.swift */,
@@ -772,6 +775,7 @@
 			files = (
 				F800000000000000000105 /* NativeScheduleDraftTests.swift in Sources */,
 				F800000000000000000264 /* ControlsSnapshotTests.swift in Sources */,
+				F800000000000000000160 /* GoveeBluetoothIdleTests.swift in Sources */,
 				F800000000000000000011 /* GoveeBluetoothTests.swift in Sources */,
 				B300000000000000000004 /* NanoleafTests.swift in Sources */,
 				B300000000000000000013 /* NanoleafShapesManagerTests.swift in Sources */,

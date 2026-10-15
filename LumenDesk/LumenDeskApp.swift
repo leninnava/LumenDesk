@@ -83,6 +83,7 @@ struct LumenDeskApp: App {
         Settings {
             NativeSettingsView()
                 .environmentObject(manager)
+                .environmentObject(goveeBluetooth)
                 .environmentObject(networkGate)
         }
 

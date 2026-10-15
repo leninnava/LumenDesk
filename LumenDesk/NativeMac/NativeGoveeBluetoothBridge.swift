@@ -23,12 +23,31 @@ enum NativePairedBluetoothLights {
     }
 }
 
+/// Settings → General: whether Bluetooth-only lights' links close when idle, so the Govee phone
+/// app can connect to them. Off by default, since reconnecting can take half a minute.
+enum NativeBluetoothIdleRelease {
+    static let enabledKey = "Native.bluetoothIdleRelease.v1"
+    static let minutesKey = "Native.bluetoothIdleReleaseMinutes.v1"
+    static let minuteChoices = [1, 5, 15]
+    static let defaultMinutes = 5
+
+    static func timeout(enabled: Bool, minutes: Int) -> TimeInterval? {
+        enabled ? TimeInterval(minuteChoices.contains(minutes) ? minutes : defaultMinutes) * 60 : nil
+    }
+
+    static func apply(to bluetooth: GoveeBluetoothController, defaults: UserDefaults = .standard) {
+        let minutes = defaults.object(forKey: minutesKey) as? Int ?? defaultMinutes
+        bluetooth.bluetoothOnlyIdleTimeout = timeout(enabled: defaults.bool(forKey: enabledKey), minutes: minutes)
+    }
+}
+
 extension LightManager {
     /// Routes Bluetooth-only Govee lights through `bluetooth` and restores the paired ones.
     /// Safe to call more than once.
     func connectGoveeBluetooth(_ bluetooth: GoveeBluetoothController) {
         guard goveeBluetooth == nil else { return }
         goveeBluetooth = bluetooth
+        NativeBluetoothIdleRelease.apply(to: bluetooth)
         bluetooth.isPaired = { NativePairedBluetoothLights.all[$0] != nil }
         bluetooth.pairedPeripheral = { NativePairedBluetoothLights.peripherals[$0].flatMap(UUID.init(uuidString:)) }
         bluetooth.onBindPeripheral = { name, identifier in

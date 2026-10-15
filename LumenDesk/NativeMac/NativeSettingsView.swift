@@ -16,7 +16,10 @@ struct NativeSettingsView: View {
 
 private struct NativeGeneralSettings: View {
     @EnvironmentObject private var manager: LightManager
+    @EnvironmentObject private var bluetooth: GoveeBluetoothController
     @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
+    @AppStorage(NativeBluetoothIdleRelease.enabledKey) private var releaseBluetooth = false
+    @AppStorage(NativeBluetoothIdleRelease.minutesKey) private var releaseMinutes = NativeBluetoothIdleRelease.defaultMinutes
 
     var body: some View {
         Form {
@@ -38,6 +41,19 @@ private struct NativeGeneralSettings: View {
             } footer: {
                 Text("Used by room schedules that run at sunrise or sunset.")
             }
+            Section {
+                Toggle("Release Bluetooth lights when idle", isOn: $releaseBluetooth)
+                Picker("After", selection: $releaseMinutes) {
+                    ForEach(NativeBluetoothIdleRelease.minuteChoices, id: \.self) { minutes in
+                        Text(minutes == 1 ? "1 minute" : "\(minutes) minutes").tag(minutes)
+                    }
+                }
+                .disabled(!releaseBluetooth)
+            } footer: {
+                Text("Disconnects lights that only work over Bluetooth after this long without a command, so the Govee app can connect to them. The next command reconnects, which can take up to half a minute.")
+            }
+            .onChange(of: releaseBluetooth) { _ in NativeBluetoothIdleRelease.apply(to: bluetooth) }
+            .onChange(of: releaseMinutes) { _ in NativeBluetoothIdleRelease.apply(to: bluetooth) }
         }
         .formStyle(.grouped)
     }

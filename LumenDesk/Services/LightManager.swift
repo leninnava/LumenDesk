@@ -521,7 +521,9 @@ final class LightManager: ObservableObject {
         guard demoWorkspaceController.allowsLiveNetworking else { return }
         let now = Date()
         for d in devices {
-            if now.timeIntervalSince(d.lastSeen) > 75, !d.isStale {
+            // Fork: a Bluetooth light released while idle is silent by design, not offline.
+            if now.timeIntervalSince(d.lastSeen) > 75, !d.isStale,
+               !(d.isBluetoothOnly && goveeBluetooth?.isReleased(d) == true) {
                 d.isStale = true
                 stalenessGeneration += 1  // triggers manager @Published, re-renders rooms
             }
