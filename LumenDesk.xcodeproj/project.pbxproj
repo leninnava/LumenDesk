@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F800000000000000000001 /* NativeControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000001 /* NativeControls.swift */; };
+		F800000000000000000002 /* NativeLightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000002 /* NativeLightDetailView.swift */; };
+		F800000000000000000003 /* NativeGroupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000003 /* NativeGroupDetailView.swift */; };
+		F800000000000000000004 /* NativeMainWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000004 /* NativeMainWindow.swift */; };
+		F800000000000000000005 /* NativeMenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000005 /* NativeMenuBarView.swift */; };
+		F800000000000000000006 /* NativeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000006 /* NativeSettingsView.swift */; };
 		B100000000000000000001 /* LumenDeskApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000001 /* LumenDeskApp.swift */; };
 		B100000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000002 /* ContentView.swift */; };
 		B100000000000000000003 /* LightDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000003 /* LightDevice.swift */; };
@@ -106,6 +112,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F900000000000000000001 /* NativeControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeControls.swift; sourceTree = "<group>"; };
+		F900000000000000000002 /* NativeLightDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLightDetailView.swift; sourceTree = "<group>"; };
+		F900000000000000000003 /* NativeGroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeGroupDetailView.swift; sourceTree = "<group>"; };
+		F900000000000000000004 /* NativeMainWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMainWindow.swift; sourceTree = "<group>"; };
+		F900000000000000000005 /* NativeMenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMenuBarView.swift; sourceTree = "<group>"; };
+		F900000000000000000006 /* NativeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSettingsView.swift; sourceTree = "<group>"; };
 		A100000000000000000001 /* LumenDeskApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenDeskApp.swift; sourceTree = "<group>"; };
 		A100000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A100000000000000000003 /* LightDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightDevice.swift; sourceTree = "<group>"; };
@@ -251,6 +263,7 @@
 				C100000000000000000003 /* Models */,
 				C100000000000000000004 /* Services */,
 				C100000000000000000007 /* Views */,
+				F700000000000000000001 /* NativeMac */,
 				A10000000000000000000B /* Assets.xcassets */,
 				A10000000000000000000D /* Info.plist */,
 				A10000000000000000000E /* LumenDesk.entitlements */,
@@ -384,6 +397,19 @@
 			path = LumenDeskTests;
 			sourceTree = "<group>";
 		};
+		F700000000000000000001 /* NativeMac */ = {
+			isa = PBXGroup;
+			children = (
+				F900000000000000000001 /* NativeControls.swift */,
+				F900000000000000000002 /* NativeLightDetailView.swift */,
+				F900000000000000000003 /* NativeGroupDetailView.swift */,
+				F900000000000000000004 /* NativeMainWindow.swift */,
+				F900000000000000000005 /* NativeMenuBarView.swift */,
+				F900000000000000000006 /* NativeSettingsView.swift */,
+			);
+			path = NativeMac;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -476,6 +502,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F800000000000000000001 /* NativeControls.swift in Sources */,
+				F800000000000000000002 /* NativeLightDetailView.swift in Sources */,
+				F800000000000000000003 /* NativeGroupDetailView.swift in Sources */,
+				F800000000000000000004 /* NativeMainWindow.swift in Sources */,
+				F800000000000000000005 /* NativeMenuBarView.swift in Sources */,
+				F800000000000000000006 /* NativeSettingsView.swift in Sources */,
 				B300000000000000000003 /* NanoleafPairingView.swift in Sources */,
 				B300000000000000000002 /* NanoleafCredentialStore.swift in Sources */,
 				B300000000000000000001 /* NanoleafClient.swift in Sources */,

@@ -1,0 +1,75 @@
+#if os(macOS)
+import SwiftUI
+
+struct NativeSettingsView: View {
+    var body: some View {
+        TabView {
+            NativeGeneralSettings()
+                .tabItem { Label("General", systemImage: "gearshape") }
+            NativeNetworkSettings()
+                .tabItem { Label("Network", systemImage: "network") }
+        }
+        .frame(width: 460)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct NativeGeneralSettings: View {
+    @EnvironmentObject private var manager: LightManager
+
+    var body: some View {
+        Form {
+            Section {
+                DatePicker("Sunrise", selection: time(
+                    hour: manager.sunriseHour, minute: manager.sunriseMinute,
+                    set: manager.setSunriseTime), displayedComponents: .hourAndMinute)
+                DatePicker("Sunset", selection: time(
+                    hour: manager.sunsetHour, minute: manager.sunsetMinute,
+                    set: manager.setSunsetTime), displayedComponents: .hourAndMinute)
+            } footer: {
+                Text("Used by room schedules that run at sunrise or sunset.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func time(hour: Int, minute: Int, set: @escaping (Int, Int) -> Void) -> Binding<Date> {
+        Binding(
+            get: { Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: Date()) ?? Date() },
+            set: {
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                set(parts.hour ?? hour, parts.minute ?? minute)
+            })
+    }
+}
+
+private struct NativeNetworkSettings: View {
+    @EnvironmentObject private var manager: LightManager
+
+    var body: some View {
+        Form {
+            Section {
+                LabeledContent("Lights found", value: "\(manager.devices.count)")
+                LabeledContent("Last scan") {
+                    if let date = manager.lastScanDate {
+                        Text(date, style: .relative) + Text(" ago")
+                    } else {
+                        Text("Never")
+                    }
+                }
+                LabeledContent("Scanning on") {
+                    Text(manager.scanInterfaces.isEmpty ? "—" : manager.scanInterfaces.joined(separator: ", "))
+                        .multilineTextAlignment(.trailing)
+                }
+                HStack {
+                    Spacer()
+                    Button("Scan Now") { manager.scan() }.disabled(manager.isScanning)
+                }
+            } footer: {
+                Text("Govee lights need LAN Control turned on in the Govee Home app.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+#endif

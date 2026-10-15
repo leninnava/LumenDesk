@@ -21,14 +21,14 @@ struct LumenDeskApp: App {
     }
 
     #if os(macOS)
+    // Fork: native macOS window, settings and menu bar extra (see NativeMac/).
+    // The original views remain for iOS.
     @SceneBuilder private var macScenes: some Scene {
-        WindowGroup {
-            RootView()
+        Window("LumenDesk", id: NativeScenes.mainWindowID) {
+            NativeMainWindow()
                 .environmentObject(manager)
-                .frame(minWidth: 620, minHeight: 540)
-                .preferredColorScheme(.dark)
+                .frame(minWidth: 640, minHeight: 460)
         }
-        .windowResizability(.automatic)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Scan for Lights") {
@@ -49,17 +49,6 @@ struct LumenDeskApp: App {
                 Button("Export Configuration\u{2026}") { exportConfiguration() }
                 Button("Import Configuration\u{2026}") { importConfiguration() }
             }
-            CommandMenu("View") {
-                Picker("Layout", selection: Binding(
-                    get: { UserDefaults.standard.string(forKey: "LumenDesk.workspaceLayout.v1") ?? WorkspaceLayout.automatic.rawValue },
-                    set: { UserDefaults.standard.set($0, forKey: "LumenDesk.workspaceLayout.v1") }
-                )) { ForEach(WorkspaceLayout.allCases) { Text($0.title).tag($0.rawValue) } }
-                Divider()
-                Picker("Density", selection: Binding(
-                    get: { UserDefaults.standard.string(forKey: "LumenDesk.interfaceDensity.v1") ?? InterfaceDensity.comfortable.rawValue },
-                    set: { UserDefaults.standard.set($0, forKey: "LumenDesk.interfaceDensity.v1") }
-                )) { ForEach(InterfaceDensity.allCases) { Text($0.title).tag($0.rawValue) } }
-            }
             CommandGroup(replacing: .undoRedo) {
                 Button("Undo Light Change") { manager.undo() }
                     .keyboardShortcut("z", modifiers: .command)
@@ -71,32 +60,17 @@ struct LumenDeskApp: App {
         }
 
         Settings {
-            LumenDeskSettingsView()
+            NativeSettingsView()
                 .environmentObject(manager)
-                .preferredColorScheme(.dark)
         }
 
         MenuBarExtra {
-            MenuBarPopoverView()
+            NativeMenuBarView()
                 .environmentObject(manager)
-                .preferredColorScheme(.dark)
         } label: {
-            LumenMark(size: 16, monochrome: true)
-                .foregroundStyle(moodColor)
+            NativeMenuBarLabel(manager: manager)
         }
         .menuBarExtraStyle(.window)
-    }
-
-    // MARK: - Mood ring colour for the menu-bar icon
-
-    private var moodColor: Color {
-        let on = manager.devices.filter { $0.isOn }
-        guard !on.isEmpty else { return .yellow }
-        let hsbs = on.map { $0.color.hsbComponents }
-        let avgH = hsbs.reduce(0.0) { $0 + $1.h } / Double(on.count)
-        let avgS = hsbs.reduce(0.0) { $0 + $1.s } / Double(on.count)
-        let avgB = on.reduce(0.0) { $0 + $1.brightness } / Double(on.count)
-        return Color(hue: avgH, saturation: avgS, brightness: max(0.6, avgB))
     }
 
     // MARK: - Export / Import
