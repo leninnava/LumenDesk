@@ -8,6 +8,8 @@ struct NativeSettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             NativeNetworkSettings()
                 .tabItem { Label("Network", systemImage: "network") }
+            NativeShortcutsSettings()
+                .tabItem { Label("Shortcuts", systemImage: "command") }
         }
         .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
