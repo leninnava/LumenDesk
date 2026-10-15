@@ -90,7 +90,14 @@ struct NativeMainWindow: View {
         }
         .navigationSubtitle(manager.isScanning ? "Scanning…" : "")
         .managedActionConfirmations(manager)
-        .sheet(isPresented: $pairing) { NativeBluetoothPairingSheet() }
+        .sheet(isPresented: $pairing) {
+            // Default to the room being viewed.
+            if case .room(let roomID) = selection {
+                NativeBluetoothPairingSheet(roomID: roomID)
+            } else {
+                NativeBluetoothPairingSheet()
+            }
+        }
         .nativeRenameLightAlert(renamingLight, isPresented: Binding(
             get: { renamingLight != nil }, set: { if !$0 { renamingLight = nil } }), manager: manager)
         .nativeRoomNameAlert(isPresented: $addingRoom, title: "New Room", confirmTitle: "Create") { name in

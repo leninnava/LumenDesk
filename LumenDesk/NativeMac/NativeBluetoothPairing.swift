@@ -7,6 +7,8 @@ struct NativeBluetoothPairingSheet: View {
     @EnvironmentObject private var manager: LightManager
     @EnvironmentObject private var bluetooth: GoveeBluetoothController
     @Environment(\.dismiss) private var dismiss
+    /// Room new lights go into; they're named after it.
+    @State var roomID: UUID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -14,6 +16,13 @@ struct NativeBluetoothPairingSheet: View {
             Text("For Govee lights without Wi-Fi control. Keep the light on and near this Mac. LumenDesk only connects to lights you add here.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Picker("Add to room", selection: $roomID) {
+                Text("No Room").tag(UUID?.none)
+                ForEach(manager.rooms) { room in
+                    Text(room.name).tag(UUID?.some(room.id))
+                }
+            }
 
             List {
                 if bluetooth.nearby.isEmpty {
@@ -34,7 +43,7 @@ struct NativeBluetoothPairingSheet: View {
                         if manager.isKnownBluetoothAdvert(light.name) {
                             Text("Added").foregroundStyle(.secondary)
                         } else {
-                            Button("Add") { manager.pairBluetoothLight(light, bluetooth: bluetooth) }
+                            Button("Add") { manager.pairBluetoothLight(light, room: roomID, bluetooth: bluetooth) }
                         }
                     }
                 }

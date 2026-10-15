@@ -10,7 +10,7 @@ struct NativeRoomMenu: View {
         Menu("Room") {
             Picker("Room", selection: Binding(
                 get: { manager.room(forLightID: device.id)?.id },
-                set: { manager.assign(lightID: device.id, toRoom: $0) }
+                set: { manager.nativeAssign(device, toRoom: $0) }
             )) {
                 Text("No Room").tag(UUID?.none)
                 ForEach(manager.rooms) { room in
@@ -64,6 +64,33 @@ extension View {
                             initialName: device?.label ?? "", confirmTitle: "Rename") { name in
             if let device { manager.setCustomName(device.id, name: name) }
         }
+    }
+}
+
+extension LightManager {
+    /// What kind of fixture a model is, for automatic names.
+    static func nativeFixtureKind(sku: String?) -> String {
+        switch sku {
+        case "H6008": return "Bulb"
+        case "H60A1": return "Ceiling Light"
+        default: return "Light"
+        }
+    }
+
+    /// Moves a light to a room and, unless the user named it, names it after the room:
+    /// "Living Room Bulb", then "Living Room Bulb 2", and so on.
+    func nativeAssign(_ device: LightDevice, toRoom roomID: UUID?) {
+        assign(lightID: device.id, toRoom: roomID)
+        guard device.customName == nil, let room = rooms.first(where: { $0.id == roomID }) else { return }
+        let base = "\(room.name) \(Self.nativeFixtureKind(sku: device.sku))"
+        let taken = Set(devices.filter { $0.id != device.id }.map(\.label))
+        var name = base
+        var number = 2
+        while taken.contains(name) {
+            name = "\(base) \(number)"
+            number += 1
+        }
+        setCustomName(device.id, name: name)
     }
 }
 #endif

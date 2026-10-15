@@ -118,7 +118,7 @@ struct NativeAddLightsMenu: View {
         Menu("Add Lights") {
             ForEach(others) { light in
                 Button {
-                    manager.assign(lightID: light.id, toRoom: roomID)
+                    manager.nativeAssign(light, toRoom: roomID)
                 } label: {
                     if let current = manager.room(forLightID: light.id) {
                         Text("\(light.label) (from \(current.name))")

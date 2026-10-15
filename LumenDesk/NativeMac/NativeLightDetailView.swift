@@ -84,7 +84,7 @@ struct NativeLightDetailView: View {
                     .onSubmit { manager.setCustomName(device.id, name: name) }
                 Picker("Room", selection: Binding(
                     get: { manager.room(forLightID: device.id)?.id },
-                    set: { manager.assign(lightID: device.id, toRoom: $0) }
+                    set: { manager.nativeAssign(device, toRoom: $0) }
                 )) {
                     Text("No Room").tag(UUID?.none)
                     ForEach(manager.rooms) { room in

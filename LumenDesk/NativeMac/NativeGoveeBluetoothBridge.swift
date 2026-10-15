@@ -55,9 +55,13 @@ extension LightManager {
         }
     }
 
-    func pairBluetoothLight(_ light: GoveeBluetoothController.NearbyLight, bluetooth: GoveeBluetoothController) {
+    func pairBluetoothLight(_ light: GoveeBluetoothController.NearbyLight, room roomID: UUID?,
+                            bluetooth: GoveeBluetoothController) {
         NativePairedBluetoothLights.all[light.name] = light.sku
         addPairedBluetoothLight(name: light.name, sku: light.sku, bluetooth: bluetooth)
+        if let roomID, let device = devices.first(where: { $0.id == "govee:ble:\(light.name)" }) {
+            nativeAssign(device, toRoom: roomID)
+        }
         logActivity(.system, title: "Bluetooth light paired", detail: light.name)
     }
 
