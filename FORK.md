@@ -60,6 +60,24 @@ Signed builds run in the App Sandbox, so settings live in
   up as a second LumenDesk in the controls gallery. Remove stale copies with
   `pluginkit -r <path>/LumenDesk.app/Contents/PlugIns/LumenDeskControls.appex`.
 
+## Mac integration
+
+- **Open at login** (Settings → General) uses `SMAppService.mainApp`. Services start from the menu
+  bar icon too, so a login launch works even when the main window stays closed.
+- **Shortcuts** (Settings → Shortcuts) are Carbon hot keys: no Accessibility permission, and they
+  work in the sandbox. A combination needs ⌘, ⌥ or ⌃ (⌘ alone is refused); one another app
+  registered first can't be taken and is flagged.
+- **Automations** (Settings → Automations) turn lights off on sleep or screen lock and restore the
+  ones they turned off once the Mac is awake and unlocked. Sleep is held for 3 s through IOKit's
+  power notifications so the commands leave first; if that registration fails, only
+  `NSWorkspace.willSleepNotification` remains and macOS doesn't wait. Restores wait 5 s after
+  wake and for a network (up to 30 s more), because Wi-Fi rejoins after the wake notification.
+  Display sleep alone doesn't count; locking and switching users do.
+- **Release Bluetooth lights when idle** (Settings → General, off by default) closes
+  Bluetooth-only lights' links after 1, 5 or 15 minutes without a command so the Govee app can
+  connect; the next command reconnects. Status polling doesn't reopen a released link, so the
+  light's state isn't refreshed until then.
+
 ## What we learned on real hardware
 
 - **Govee H60A1 (12" RGBWW + RGBIC ceiling light) ignores `ptReal` over LAN.** Power-off sent as
