@@ -6,12 +6,25 @@ import UniformTypeIdentifiers
 
 @main
 struct LumenDeskApp: App {
-    @StateObject private var manager = LightManager()
+    // Fork: the objects live in AppServices so App Intents (Shortcuts, Siri, Control Center)
+    // reach the same LightManager as the windows.
+    @StateObject private var manager: LightManager
     #if os(macOS)
-    @StateObject private var goveeBluetooth = GoveeBluetoothController()
-    @StateObject private var goveeScenes = GoveeSceneStore()
-    @StateObject private var networkGate = NativeNetworkGate()
+    @StateObject private var goveeBluetooth: GoveeBluetoothController
+    @StateObject private var goveeScenes: GoveeSceneStore
+    @StateObject private var networkGate: NativeNetworkGate
     #endif
+
+    init() {
+        let services = AppServices.shared
+        _manager = StateObject(wrappedValue: services.manager)
+        #if os(macOS)
+        _goveeBluetooth = StateObject(wrappedValue: services.goveeBluetooth)
+        _goveeScenes = StateObject(wrappedValue: services.goveeScenes)
+        _networkGate = StateObject(wrappedValue: services.networkGate)
+        if !AppServices.isRunningTests { services.controlsBridge.start() }
+        #endif
+    }
 
     var body: some Scene {
         #if os(macOS)

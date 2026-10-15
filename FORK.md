@@ -38,6 +38,24 @@ the certificate shows as invalid, install Apple's WWDR G3 intermediate
 Signed builds run in the App Sandbox, so settings live in
 `~/Library/Containers/com.lumendesk.LumenDesk`, separate from any earlier unsigned run.
 
+## Shortcuts, Siri and Control Center
+
+- **App Intents** (`LumenDesk/Intents/`, macOS 13+ and iOS): lights, rooms and scenes as entities;
+  turn a light, room or all lights on/off/toggle, set light or room brightness, apply a scene;
+  App Shortcuts phrases for Siri and Spotlight. They run in the app's process and reach the same
+  `LightManager` as the windows through `AppServices.shared`. A cold launch waits up to 4 s for
+  lights to be rediscovered. They skip the app's confirmation alerts, which a Shortcut can't answer.
+- **LumenDeskControls** (`LumenDeskControls/`, macOS 26+ only): an "All Lights" control, a
+  per-room control (pick the room when adding it) and a Rooms desktop widget. The extension only
+  draws; its toggles run intents from `LumenDesk/Shared/` that the system performs in the app
+  (`ForegroundContinuableIntent` on macOS 26, `allowedExecutionTargets = .main` on 27). The app
+  writes room/all-lights state to the App Group `<team ID>.com.lumendesk.LumenDesk`
+  (`NativeControlsBridge`) and reloads the controls when it changes. Team-prefixed groups need no
+  provisioning profile, so `Tools/build-signed.sh` signs both with the free team as before.
+- Xcode registers every build it makes with LaunchServices, so a build in another folder can show
+  up as a second LumenDesk in the controls gallery. Remove stale copies with
+  `pluginkit -r <path>/LumenDesk.app/Contents/PlugIns/LumenDeskControls.appex`.
+
 ## What we learned on real hardware
 
 - **Govee H60A1 (12" RGBWW + RGBIC ceiling light) ignores `ptReal` over LAN.** Power-off sent as

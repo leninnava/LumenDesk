@@ -15,6 +15,10 @@ targets:
     supportedDestinations: [macOS, iOS]
     sources:
       - path: LumenDesk
+    dependencies:
+      # Fork: Control Center controls and the desktop widget (macOS 26+). The iOS build skips it.
+      - target: LumenDeskControls
+        destinationFilters: [macOS]
     info:
       path: LumenDesk/Info.plist
       properties:
@@ -71,6 +75,25 @@ targets:
           # driven relaunches. Music Mode registers the currently running
           # bundle immediately before requesting Screen Recording access.
           REGISTER_WITH_LAUNCH_SERVICES[sdk=macosx*]: NO
+  LumenDeskControls:
+    type: app-extension
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: LumenDeskControls
+      # Compiled into the app too: the snapshot format, RoomEntity and the control intents.
+      - path: LumenDesk/Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lumendesk.LumenDesk.Controls
+        MARKETING_VERSION: "1.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_FILE: LumenDeskControls/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: LumenDeskControls/LumenDeskControls.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) LUMENDESK_WIDGET_EXTENSION"
   LumenDeskTests:
     type: bundle.unit-test
     platform: macOS

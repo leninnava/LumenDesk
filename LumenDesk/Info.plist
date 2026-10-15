@@ -24,6 +24,8 @@
     <string>public.app-category.utilities</string>
     <key>LSMinimumSystemVersion</key>
     <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+    <key>LumenDeskAppGroup</key>
+    <string>$(DEVELOPMENT_TEAM).com.lumendesk.LumenDesk</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 SeanPVera</string>
     <key>NSMicrophoneUsageDescription</key>

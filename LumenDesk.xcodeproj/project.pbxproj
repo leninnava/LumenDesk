@@ -13,6 +13,21 @@
 		F800000000000000000103 /* NativeEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000103 /* NativeEffects.swift */; };
 		F800000000000000000104 /* NativeMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000104 /* NativeMusicView.swift */; };
 		F800000000000000000105 /* NativeScheduleDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000105 /* NativeScheduleDraftTests.swift */; };
+		F800000000000000000250 /* AppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000250 /* AppServices.swift */; };
+		F800000000000000000251 /* LightEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000251 /* LightEntities.swift */; };
+		F800000000000000000252 /* LightIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000252 /* LightIntents.swift */; };
+		F800000000000000000253 /* NativeControlsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000253 /* NativeControlsBridge.swift */; };
+		F800000000000000000254 /* ControlsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000254 /* ControlsSnapshot.swift */; };
+		F800000000000000000255 /* RoomEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000255 /* RoomEntity.swift */; };
+		F800000000000000000256 /* ControlIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000256 /* ControlIntents.swift */; };
+		F800000000000000000257 /* ControlsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000254 /* ControlsSnapshot.swift */; };
+		F800000000000000000258 /* RoomEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000255 /* RoomEntity.swift */; };
+		F800000000000000000259 /* ControlIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000256 /* ControlIntents.swift */; };
+		F800000000000000000260 /* LumenDeskControlsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000257 /* LumenDeskControlsBundle.swift */; };
+		F800000000000000000261 /* RoomControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000258 /* RoomControls.swift */; };
+		F800000000000000000262 /* RoomsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000259 /* RoomsWidget.swift */; };
+		F800000000000000000264 /* ControlsSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000263 /* ControlsSnapshotTests.swift */; };
+		F800000000000000000263 /* LumenDeskControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F900000000000000000262 /* LumenDeskControls.appex */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F800000000000000000017 /* NativeStartup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000017 /* NativeStartup.swift */; };
 		F800000000000000000016 /* NativeNetworkGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000016 /* NativeNetworkGate.swift */; };
 		F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000015 /* NativeBluetoothPairing.swift */; };
@@ -126,7 +141,28 @@
 			remoteGlobalIDString = E100000000000000000001;
 			remoteInfo = LumenDesk;
 		};
+		F500000000000000000255 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F100000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F500000000000000000250;
+			remoteInfo = LumenDeskControls;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F500000000000000000254 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F800000000000000000263 /* LumenDeskControls.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		F900000000000000000100 /* NativeScheduleDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeScheduleDraft.swift; sourceTree = "<group>"; };
@@ -135,6 +171,20 @@
 		F900000000000000000103 /* NativeEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeEffects.swift; sourceTree = "<group>"; };
 		F900000000000000000104 /* NativeMusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMusicView.swift; sourceTree = "<group>"; };
 		F900000000000000000105 /* NativeScheduleDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeScheduleDraftTests.swift; sourceTree = "<group>"; };
+		F900000000000000000250 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
+		F900000000000000000251 /* LightEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightEntities.swift; sourceTree = "<group>"; };
+		F900000000000000000252 /* LightIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightIntents.swift; sourceTree = "<group>"; };
+		F900000000000000000253 /* NativeControlsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeControlsBridge.swift; sourceTree = "<group>"; };
+		F900000000000000000254 /* ControlsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsSnapshot.swift; sourceTree = "<group>"; };
+		F900000000000000000255 /* RoomEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomEntity.swift; sourceTree = "<group>"; };
+		F900000000000000000256 /* ControlIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlIntents.swift; sourceTree = "<group>"; };
+		F900000000000000000257 /* LumenDeskControlsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenDeskControlsBundle.swift; sourceTree = "<group>"; };
+		F900000000000000000258 /* RoomControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomControls.swift; sourceTree = "<group>"; };
+		F900000000000000000259 /* RoomsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomsWidget.swift; sourceTree = "<group>"; };
+		F900000000000000000263 /* ControlsSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlsSnapshotTests.swift; sourceTree = "<group>"; };
+		F900000000000000000260 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F900000000000000000261 /* LumenDeskControls.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LumenDeskControls.entitlements; sourceTree = "<group>"; };
+		F900000000000000000262 /* LumenDeskControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumenDeskControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F900000000000000000017 /* NativeStartup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStartup.swift; sourceTree = "<group>"; };
 		F900000000000000000016 /* NativeNetworkGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNetworkGate.swift; sourceTree = "<group>"; };
 		F900000000000000000015 /* NativeBluetoothPairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBluetoothPairing.swift; sourceTree = "<group>"; };
@@ -259,6 +309,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F500000000000000000252 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -268,6 +325,7 @@
 				C100000000000000000008 /* Preview Content */,
 				C100000000000000000002 /* LumenDesk */,
 				C200000000000000000001 /* LumenDeskTests */,
+				F600000000000000000252 /* LumenDeskControls */,
 				C100000000000000000099 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -298,6 +356,8 @@
 				C100000000000000000004 /* Services */,
 				C100000000000000000007 /* Views */,
 				F700000000000000000001 /* NativeMac */,
+				F600000000000000000250 /* Intents */,
+				F600000000000000000251 /* Shared */,
 				A10000000000000000000B /* Assets.xcassets */,
 				A10000000000000000000D /* Info.plist */,
 				A10000000000000000000E /* LumenDesk.entitlements */,
@@ -404,6 +464,7 @@
 			children = (
 				A100000000000000000099 /* LumenDesk.app */,
 				A200000000000000000099 /* LumenDeskTests.xctest */,
+				F900000000000000000262 /* LumenDeskControls.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -413,6 +474,7 @@
 			children = (
 				F900000000000000000105 /* NativeScheduleDraftTests.swift */,
 				F900000000000000000011 /* GoveeBluetoothTests.swift */,
+				F900000000000000000263 /* ControlsSnapshotTests.swift */,
 				A300000000000000000004 /* NanoleafTests.swift */,
 				A300000000000000000013 /* NanoleafShapesManagerTests.swift */,
 				A30000000000000000000E /* NanoleafShapesTests.swift */,
@@ -445,6 +507,7 @@
 				F900000000000000000103 /* NativeEffects.swift */,
 				F900000000000000000104 /* NativeMusicView.swift */,
 				F900000000000000000017 /* NativeStartup.swift */,
+				F900000000000000000253 /* NativeControlsBridge.swift */,
 				F900000000000000000016 /* NativeNetworkGate.swift */,
 				F900000000000000000015 /* NativeBluetoothPairing.swift */,
 				F900000000000000000014 /* NativeGoveeBluetoothBridge.swift */,
@@ -461,6 +524,38 @@
 			path = NativeMac;
 			sourceTree = "<group>";
 		};
+		F600000000000000000250 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				F900000000000000000250 /* AppServices.swift */,
+				F900000000000000000251 /* LightEntities.swift */,
+				F900000000000000000252 /* LightIntents.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		F600000000000000000251 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				F900000000000000000254 /* ControlsSnapshot.swift */,
+				F900000000000000000255 /* RoomEntity.swift */,
+				F900000000000000000256 /* ControlIntents.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		F600000000000000000252 /* LumenDeskControls */ = {
+			isa = PBXGroup;
+			children = (
+				F900000000000000000257 /* LumenDeskControlsBundle.swift */,
+				F900000000000000000258 /* RoomControls.swift */,
+				F900000000000000000259 /* RoomsWidget.swift */,
+				F900000000000000000260 /* Info.plist */,
+				F900000000000000000261 /* LumenDeskControls.entitlements */,
+			);
+			path = LumenDeskControls;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -471,10 +566,12 @@
 				D100000000000000000002 /* Sources */,
 				D100000000000000000003 /* Resources */,
 				D100000000000000000001 /* Frameworks */,
+				F500000000000000000254 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F500000000000000000256 /* PBXTargetDependency */,
 			);
 			name = LumenDesk;
 			productName = LumenDesk;
@@ -498,6 +595,22 @@
 			productReference = A200000000000000000099 /* LumenDeskTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		F500000000000000000250 /* LumenDeskControls */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F500000000000000000257 /* Build configuration list for PBXNativeTarget "LumenDeskControls" */;
+			buildPhases = (
+				F500000000000000000251 /* Sources */,
+				F500000000000000000252 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LumenDeskControls;
+			productName = LumenDeskControls;
+			productReference = F900000000000000000262 /* LumenDeskControls.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -514,6 +627,9 @@
 					E200000000000000000001 = {
 						CreatedOnToolsVersion = 15.0;
 						TestTargetID = E100000000000000000001;
+					};
+					F500000000000000000250 = {
+						CreatedOnToolsVersion = 26.0;
 					};
 				};
 			};
@@ -532,6 +648,7 @@
 			targets = (
 				E100000000000000000001 /* LumenDesk */,
 				E200000000000000000001 /* LumenDeskTests */,
+				F500000000000000000250 /* LumenDeskControls */,
 			);
 		};
 /* End PBXProject section */
@@ -558,6 +675,13 @@
 				F800000000000000000102 /* NativeSceneLibrary.swift in Sources */,
 				F800000000000000000103 /* NativeEffects.swift in Sources */,
 				F800000000000000000104 /* NativeMusicView.swift in Sources */,
+				F800000000000000000250 /* AppServices.swift in Sources */,
+				F800000000000000000251 /* LightEntities.swift in Sources */,
+				F800000000000000000252 /* LightIntents.swift in Sources */,
+				F800000000000000000253 /* NativeControlsBridge.swift in Sources */,
+				F800000000000000000254 /* ControlsSnapshot.swift in Sources */,
+				F800000000000000000255 /* RoomEntity.swift in Sources */,
+				F800000000000000000256 /* ControlIntents.swift in Sources */,
 				F800000000000000000017 /* NativeStartup.swift in Sources */,
 				F800000000000000000016 /* NativeNetworkGate.swift in Sources */,
 				F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */,
@@ -647,6 +771,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F800000000000000000105 /* NativeScheduleDraftTests.swift in Sources */,
+				F800000000000000000264 /* ControlsSnapshotTests.swift in Sources */,
 				F800000000000000000011 /* GoveeBluetoothTests.swift in Sources */,
 				B300000000000000000004 /* NanoleafTests.swift in Sources */,
 				B300000000000000000013 /* NanoleafShapesManagerTests.swift in Sources */,
@@ -670,6 +795,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F500000000000000000251 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F800000000000000000257 /* ControlsSnapshot.swift in Sources */,
+				F800000000000000000258 /* RoomEntity.swift in Sources */,
+				F800000000000000000259 /* ControlIntents.swift in Sources */,
+				F800000000000000000260 /* LumenDeskControlsBundle.swift in Sources */,
+				F800000000000000000261 /* RoomControls.swift in Sources */,
+				F800000000000000000262 /* RoomsWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -677,6 +815,14 @@
 			isa = PBXTargetDependency;
 			target = E100000000000000000001 /* LumenDesk */;
 			targetProxy = I200000000000000000001 /* PBXContainerItemProxy */;
+		};
+		F500000000000000000256 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilters = (
+				macos,
+			);
+			target = F500000000000000000250 /* LumenDeskControls */;
+			targetProxy = F500000000000000000255 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -904,6 +1050,66 @@
 			};
 			name = Release;
 		};
+		F500000000000000000258 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LumenDeskControls/LumenDeskControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SW2N54YNK3;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LumenDeskControls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lumendesk.LumenDesk.Controls;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) LUMENDESK_WIDGET_EXTENSION";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F500000000000000000259 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LumenDeskControls/LumenDeskControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SW2N54YNK3;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LumenDeskControls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lumendesk.LumenDesk.Controls;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) LUMENDESK_WIDGET_EXTENSION";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -930,6 +1136,15 @@
 			buildConfigurations = (
 				G200000000000000000003 /* Debug */,
 				G200000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F500000000000000000257 /* Build configuration list for PBXNativeTarget "LumenDeskControls" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F500000000000000000258 /* Debug */,
+				F500000000000000000259 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
