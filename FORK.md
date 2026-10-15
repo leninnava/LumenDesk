@@ -80,21 +80,31 @@ Reviewed 2026-10-15 (findings F1–F12). Fixed in the fork, not yet proposed ups
 - **F3/F5:** discovery (multicast, broadcast and a unicast sweep of the subnet) and 30-second
   polling ran on every network, including Nanoleaf requests that carry its token in the URL.
   LumenDesk now does this only on networks the user marked as home (Settings → Network); a manual
-  scan still works anywhere. Networks are recognised by subnet and router IP, because the router's
-  MAC isn't readable from the app, so a network using the same range can pass as home.
+  scan still works anywhere. Networks are recognised by subnet, router IP and the router's MAC,
+  which configd publishes in `State:/Network/Service/<id>/IPv4` (`ARPResolvedHardwareAddress`)
+  and a sandboxed app can read without Location access; the kernel's ARP and neighbour tables
+  only return `02:00:00:00:00:00` to apps. A home saved before this matches on subnet and router
+  IP and takes the MAC the first time it matches; after that a different or missing MAC is not
+  home.
 - **F4:** scene parameters over ~4 KB crashed frame encoding. Parameters over 2 KB, responses over
   2 MB and catalogues over 500 scenes are now rejected.
+- **F5 (Nanoleaf):** off a home network the Nanoleaf client sends nothing to a saved controller:
+  queued and in-flight requests are dropped, streams end, event-stream listeners stop, and a
+  rescan only browses Bonjour. Coming home refreshes each controller and listens again.
 - **F6:** Govee scan replies are accepted only for 15 s after a scan, so unsolicited replies can't
   add lights or move an existing light to another address.
 - **F7:** Bluetooth lights are bound to the peripheral identifier recorded at pairing (lights
   paired earlier bind on first connection), advert names must match Govee's naming schemes, the
   peripheral and pairing lists are capped, and reconnects after a failure wait 5 s.
-- **F8 (partial):** the UDP receive loop handles at most 64 datagrams per wake-up.
+- **F8:** the UDP receive loop handles at most 64 datagrams per wake-up. LIFX replies must carry
+  the client's own (non-zero) source, only a `StateService` reply introduces a device, and the
+  target maps hold at most 256 devices, oldest evicted first.
+- **F11:** removed `com.apple.security.device.midi`, which isn't an App Sandbox entitlement (the
+  sandbox profile allows CoreMIDI's `com.apple.midiserver` to every app).
 - **F12:** `build-signed.sh` now fails when the build fails.
 
-Still open: LIFX accepts `source == 0` and its target maps are unbounded (F8); Nanoleaf's event
-stream keeps retrying a saved address after leaving a home network (F5, no Nanoleaf here to
-test); `com.apple.security.device.midi` may not be a real entitlement (F11).
+Still open: the home check trusts a MAC the LAN can spoof, and a home saved before the MAC was
+read takes whichever router it next matches on subnet and router IP.
 
 ## Plan
 
