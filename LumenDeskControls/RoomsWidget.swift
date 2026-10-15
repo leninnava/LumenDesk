@@ -27,7 +27,7 @@ struct RoomsWidget: Widget {
             Entry(date: Date(), snapshot: ControlsSnapshot(
                 rooms: [.init(id: "living", name: "Living Room", lightCount: 3, onCount: 2),
                         .init(id: "office", name: "Office", lightCount: 1, onCount: 0)],
-                lightCount: 4, onCount: 2, updatedAt: Date()))
+                lights: [], lightCount: 4, onCount: 2, updatedAt: Date()))
         }
 
         func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) {

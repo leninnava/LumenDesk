@@ -22,7 +22,7 @@ final class ControlsSnapshotTests: XCTestCase {
     }
 
     func testRoomWithNoFoundLightsIsOff() {
-        let snapshot = ControlsSnapshot.make(rooms: [(id: kitchen, name: "Kitchen", lightIDs: ["a"])], lights: [])
+        let snapshot = ControlsSnapshot.make(rooms: [(id: kitchen, name: "Kitchen", lightIDs: ["a"])], lights: [] as [(id: String, isOn: Bool)])
 
         XCTAssertEqual(snapshot.room(id: kitchen.uuidString)?.lightCount, 0)
         XCTAssertEqual(snapshot.room(id: kitchen.uuidString)?.isOn, false)
@@ -81,5 +81,40 @@ final class ControlsSnapshotTests: XCTestCase {
         XCTAssertEqual(rooms.map(\.id), AppServices.shared.manager.rooms.map(\.id.uuidString))
         let missing = try await RoomEntityQuery().entities(for: [UUID().uuidString])
         XCTAssertTrue(missing.isEmpty)
+    }
+
+    func testLightsCarryNameRoomAndState() throws {
+        let kitchen = UUID()
+        let snapshot = ControlsSnapshot.make(
+            rooms: [(id: kitchen, name: "Kitchen", lightIDs: ["a"])],
+            lights: [(id: "a", name: "Ceiling", isOn: true, brightness: 60, isReachable: true),
+                     (id: "b", name: "Lamp", isOn: false, brightness: 140, isReachable: false)])
+        let ceiling = try XCTUnwrap(snapshot.light(id: "a"))
+        XCTAssertEqual(ceiling.name, "Ceiling")
+        XCTAssertEqual(ceiling.roomID, kitchen.uuidString)
+        XCTAssertEqual(ceiling.brightness, 60)
+        XCTAssertEqual(snapshot.light(id: "b")?.brightness, 100)
+        XCTAssertNil(snapshot.light(id: "b")?.roomID)
+        XCTAssertEqual(snapshot.lights(inRoom: kitchen.uuidString).map(\.id), ["a"])
+        XCTAssertEqual(snapshot.lights(inRoom: nil).count, 2)
+    }
+
+    func testLightChangesCountAsNewContent() {
+        let rooms: [(id: UUID, name: String, lightIDs: [String])] = []
+        let before = ControlsSnapshot.make(rooms: rooms, lights: [(id: "a", name: "A", isOn: true, brightness: 50, isReachable: true)])
+        let dimmed = ControlsSnapshot.make(rooms: rooms, lights: [(id: "a", name: "A", isOn: true, brightness: 20, isReachable: true)])
+        XCTAssertFalse(before.hasSameContent(as: dimmed))
+    }
+
+    func testSnapshotsWrittenBeforeLightsExistedStillDecode() throws {
+        let old = #"{"lightCount":1,"onCount":1,"rooms":[{"id":"r","lightCount":1,"name":"Office","onCount":1}],"updatedAt":"2026-10-15T20:00:00Z"}"#
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("controls-state.json")
+        try Data(old.utf8).write(to: file)
+        let snapshot = ControlsStateStore(fileURL: file).load()
+        XCTAssertEqual(snapshot.rooms.first?.name, "Office")
+        XCTAssertEqual(snapshot.lights, [])
+        XCTAssertTrue(snapshot.anyOn)
     }
 }

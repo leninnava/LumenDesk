@@ -81,7 +81,10 @@ final class NativeControlsBridge {
     static func snapshot(of manager: LightManager, at date: Date = Date()) -> ControlsSnapshot {
         ControlsSnapshot.make(
             rooms: manager.rooms.map { (id: $0.id, name: $0.name, lightIDs: $0.lightIDs) },
-            lights: manager.devices.map { (id: $0.id, isOn: $0.isOn) },
+            lights: manager.devices.map {
+                (id: $0.id, name: $0.label, isOn: $0.isOn,
+                 brightness: Int(($0.brightness * 100).rounded()), isReachable: !$0.isStale)
+            },
             at: date
         )
     }

@@ -17,16 +17,36 @@ struct ControlsSnapshot: Codable, Equatable {
         var isOn: Bool { onCount > 0 }
     }
 
+    /// One light, for the per-light control and the Room Lights widget.
+    struct Light: Codable, Equatable, Identifiable {
+        let id: String
+        let name: String
+        let roomID: String?
+        let isOn: Bool
+        /// 0–100.
+        let brightness: Int
+        let isReachable: Bool
+    }
+
     var rooms: [Room]
+    var lights: [Light]
     var lightCount: Int
     var onCount: Int
     var updatedAt: Date
 
     var anyOn: Bool { onCount > 0 }
 
-    static let empty = ControlsSnapshot(rooms: [], lightCount: 0, onCount: 0, updatedAt: .distantPast)
+    static let empty = ControlsSnapshot(rooms: [], lights: [], lightCount: 0, onCount: 0, updatedAt: .distantPast)
 
     func room(id: String) -> Room? { rooms.first { $0.id == id } }
+
+    func light(id: String) -> Light? { lights.first { $0.id == id } }
+
+    /// The room's lights, or every light when `roomID` is nil.
+    func lights(inRoom roomID: String?) -> [Light] {
+        guard let roomID else { return lights }
+        return lights.filter { $0.roomID == roomID }
+    }
 
     /// Builds the snapshot from plain values so it can be tested without a `LightManager`.
     ///
@@ -34,22 +54,36 @@ struct ControlsSnapshot: Codable, Equatable {
     ///   - rooms: rooms in display order, with the light IDs assigned to each.
     ///   - lights: every light found so far and whether it is on.
     static func make(rooms: [(id: UUID, name: String, lightIDs: [String])],
-                     lights: [(id: String, isOn: Bool)],
+                     lights: [(id: String, name: String, isOn: Bool, brightness: Int, isReachable: Bool)],
                      at date: Date = Date()) -> ControlsSnapshot {
         var power: [String: Bool] = [:]
         for light in lights { power[light.id] = light.isOn }
+        var roomOfLight: [String: String] = [:]
+        for room in rooms { for id in room.lightIDs where roomOfLight[id] == nil { roomOfLight[id] = room.id.uuidString } }
         let snapshotRooms = rooms.map { room -> Room in
             let present = room.lightIDs.compactMap { power[$0] }
             return Room(id: room.id.uuidString, name: room.name,
                         lightCount: present.count, onCount: present.filter { $0 }.count)
         }
-        return ControlsSnapshot(rooms: snapshotRooms, lightCount: power.count,
+        let snapshotLights = lights.map {
+            Light(id: $0.id, name: $0.name, roomID: roomOfLight[$0.id], isOn: $0.isOn,
+                  brightness: min(100, max(0, $0.brightness)), isReachable: $0.isReachable)
+        }
+        return ControlsSnapshot(rooms: snapshotRooms, lights: snapshotLights, lightCount: power.count,
                                 onCount: power.values.filter { $0 }.count, updatedAt: date)
     }
 
-    /// Equal apart from the timestamp, so the app only writes (and reloads controls) on change.
+    /// Power-only form; names default to the IDs.
+    static func make(rooms: [(id: UUID, name: String, lightIDs: [String])],
+                     lights: [(id: String, isOn: Bool)],
+                     at date: Date = Date()) -> ControlsSnapshot {
+        make(rooms: rooms,
+             lights: lights.map { (id: $0.id, name: $0.id, isOn: $0.isOn, brightness: 100, isReachable: true) },
+             at: date)
+    }
+
     func hasSameContent(as other: ControlsSnapshot) -> Bool {
-        rooms == other.rooms && lightCount == other.lightCount && onCount == other.onCount
+        rooms == other.rooms && lights == other.lights && lightCount == other.lightCount && onCount == other.onCount
     }
 }
 
@@ -59,6 +93,22 @@ struct ControlsSnapshot: Codable, Equatable {
 /// The group is `<team ID>.com.lumendesk.LumenDesk`: a team-prefixed macOS app group, which needs
 /// no registration or provisioning profile. Both Info.plists carry it as `LumenDeskAppGroup`,
 /// expanded from `$(DEVELOPMENT_TEAM)` at build time, so it always matches the signing team.
+extension ControlsSnapshot {
+    private enum CodingKeys: String, CodingKey {
+        case rooms, lights, lightCount, onCount, updatedAt
+    }
+
+    /// Snapshots written before per-light entries existed decode with no lights.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        rooms = try container.decode([Room].self, forKey: .rooms)
+        lights = try container.decodeIfPresent([Light].self, forKey: .lights) ?? []
+        lightCount = try container.decode(Int.self, forKey: .lightCount)
+        onCount = try container.decode(Int.self, forKey: .onCount)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
+}
+
 struct ControlsStateStore {
     static let fileName = "controls-state.json"
     static let infoPlistKey = "LumenDeskAppGroup"

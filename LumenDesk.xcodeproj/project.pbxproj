@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F800000000000000000341 /* LightControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000341 /* LightControls.swift */; };
+		F800000000000000000342 /* LightEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000340 /* LightEntity.swift */; };
+		F800000000000000000340 /* LightEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000340 /* LightEntity.swift */; };
 		F800000000000000000100 /* NativeScheduleDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000100 /* NativeScheduleDraft.swift */; };
 		F800000000000000000101 /* NativeSchedules.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000101 /* NativeSchedules.swift */; };
 		F800000000000000000102 /* NativeSceneLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000102 /* NativeSceneLibrary.swift */; };
@@ -172,6 +175,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F900000000000000000341 /* LightControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightControls.swift; sourceTree = "<group>"; };
+		F900000000000000000340 /* LightEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightEntity.swift; sourceTree = "<group>"; };
 		F900000000000000000100 /* NativeScheduleDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeScheduleDraft.swift; sourceTree = "<group>"; };
 		F900000000000000000101 /* NativeSchedules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSchedules.swift; sourceTree = "<group>"; };
 		F900000000000000000102 /* NativeSceneLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSceneLibrary.swift; sourceTree = "<group>"; };
@@ -558,6 +563,7 @@
 		F600000000000000000251 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000340 /* LightEntity.swift */,
 				F900000000000000000254 /* ControlsSnapshot.swift */,
 				F900000000000000000255 /* RoomEntity.swift */,
 				F900000000000000000256 /* ControlIntents.swift */,
@@ -568,6 +574,7 @@
 		F600000000000000000252 /* LumenDeskControls */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000341 /* LightControls.swift */,
 				F900000000000000000257 /* LumenDeskControlsBundle.swift */,
 				F900000000000000000258 /* RoomControls.swift */,
 				F900000000000000000259 /* RoomsWidget.swift */,
@@ -703,6 +710,7 @@
 				F800000000000000000254 /* ControlsSnapshot.swift in Sources */,
 				F800000000000000000255 /* RoomEntity.swift in Sources */,
 				F800000000000000000256 /* ControlIntents.swift in Sources */,
+				F800000000000000000340 /* LightEntity.swift in Sources */,
 				F800000000000000000153 /* NativeMacEvents.swift in Sources */,
 				F800000000000000000152 /* NativeShortcutRecorder.swift in Sources */,
 				F800000000000000000151 /* NativeShortcuts.swift in Sources */,
@@ -830,9 +838,11 @@
 				F800000000000000000257 /* ControlsSnapshot.swift in Sources */,
 				F800000000000000000258 /* RoomEntity.swift in Sources */,
 				F800000000000000000259 /* ControlIntents.swift in Sources */,
+				F800000000000000000342 /* LightEntity.swift in Sources */,
 				F800000000000000000260 /* LumenDeskControlsBundle.swift in Sources */,
 				F800000000000000000261 /* RoomControls.swift in Sources */,
 				F800000000000000000262 /* RoomsWidget.swift in Sources */,
+				F800000000000000000341 /* LightControls.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -11,6 +11,8 @@ struct LumenDeskControlsBundle: WidgetBundle {
     var body: some Widget {
         AllLightsControl()
         RoomPowerControl()
+        LightPowerControl()
         RoomsWidget()
+        RoomLightsWidget()
     }
 }

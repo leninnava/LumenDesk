@@ -68,6 +68,36 @@ struct RoomPowerControlIntent: SetValueIntent {
 /// Turns every light LumenDesk has found on or off, without the confirmation the app's own
 /// "Toggle All Lights" command asks for.
 @available(macOS 26.0, *)
+struct LightPowerControlIntent: SetValueIntent {
+    static let title: LocalizedStringResource = "Set Light Power"
+    static let isDiscoverable = false
+    @available(macOS 27.0, *)
+    static var allowedExecutionTargets: IntentExecutionTargets { .main }
+
+    @Parameter(title: "Light ID")
+    var lightID: String
+
+    @Parameter(title: "On")
+    var value: Bool
+
+    init() {}
+
+    init(lightID: String, value: Bool) {
+        self.lightID = lightID
+        self.value = value
+    }
+
+    func perform() async throws -> some IntentResult {
+        #if LUMENDESK_WIDGET_EXTENSION
+        try LightControlError.failOutsideApp()
+        #else
+        try await LightIntentActions.setLightPower(lightID: lightID, action: value ? .on : .off)
+        #endif
+        return .result()
+    }
+}
+
+@available(macOS 26.0, *)
 struct AllLightsPowerControlIntent: SetValueIntent {
     static let title: LocalizedStringResource = "Set All Lights Power"
     static let isDiscoverable = false
@@ -106,4 +136,8 @@ extension RoomPowerControlIntent: ForegroundContinuableIntent {}
 @available(macOS, introduced: 26.0, deprecated: 26.0)
 @available(macOSApplicationExtension, unavailable)
 extension AllLightsPowerControlIntent: ForegroundContinuableIntent {}
+
+@available(macOS, introduced: 26.0, deprecated: 26.0)
+@available(macOSApplicationExtension, unavailable)
+extension LightPowerControlIntent: ForegroundContinuableIntent {}
 #endif

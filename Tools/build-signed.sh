@@ -36,4 +36,9 @@ xcodebuild -project LumenDesk.xcodeproj -scheme LumenDesk -configuration "$confi
 
 codesign --verify --deep --strict ".build/dd/Build/Products/$configuration/LumenDesk.app"
 
+# Xcode registers every build with LaunchServices, so a build-folder copy's controls extension
+# would shadow (or duplicate) the installed app's in Control Center and the widget gallery.
+# Unregister it; the installed copy (Tools/install.sh) is the one macOS should use.
+Tools/unregister-build.sh ".build/dd/Build/Products/$configuration/LumenDesk.app"
+
 echo "open .build/dd/Build/Products/$configuration/LumenDesk.app"
