@@ -16,9 +16,18 @@ struct NativeSettingsView: View {
 
 private struct NativeGeneralSettings: View {
     @EnvironmentObject private var manager: LightManager
+    @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
 
     var body: some View {
         Form {
+            Section {
+                Picker("Show lights as", selection: $layout) {
+                    ForEach(NativeDeviceLayout.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            } footer: {
+                Text("Applies to the main window and the menu bar.")
+            }
             Section {
                 DatePicker("Sunrise", selection: time(
                     hour: manager.sunriseHour, minute: manager.sunriseMinute,

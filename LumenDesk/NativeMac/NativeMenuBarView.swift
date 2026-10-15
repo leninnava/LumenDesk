@@ -14,6 +14,7 @@ struct NativeMenuBarLabel: View {
 struct NativeMenuBarView: View {
     @EnvironmentObject private var manager: LightManager
     @Environment(\.openWindow) private var openWindow
+    @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -43,8 +44,18 @@ struct NativeMenuBarView: View {
                 .padding(14)
             } else {
                 ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(manager.devices) { NativeMenuLightRow(device: $0) }
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(manager.rooms) { room in
+                            let lights = manager.devices(in: room)
+                            if !lights.isEmpty {
+                                NativeMenuGroup(title: room.name, lights: lights, layout: layout)
+                            }
+                        }
+                        let unassigned = manager.devices.filter { manager.room(forLightID: $0.id) == nil }
+                        if !unassigned.isEmpty {
+                            NativeMenuGroup(title: manager.rooms.isEmpty ? nil : "Other Lights",
+                                            lights: unassigned, layout: layout)
+                        }
                     }
                     .padding(14)
                 }
@@ -81,28 +92,29 @@ struct NativeMenuBarView: View {
     }
 }
 
-private struct NativeMenuLightRow: View {
+/// One room's lights in the menu bar, with a switch for the whole room.
+private struct NativeMenuGroup: View {
     @EnvironmentObject private var manager: LightManager
-    @ObservedObject var device: LightDevice
+    let title: String?
+    let lights: [LightDevice]
+    let layout: NativeDeviceLayout
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                NativeStatusIcon(device: device)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(device.label)
-                    Text(nativeStatusText(device)).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Toggle("Power", isOn: Binding(get: { device.isOn }, set: { manager.setPower(device, on: $0) }))
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                HStack {
+                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    Toggle(title, isOn: Binding(
+                        get: { lights.contains(where: { $0.isOn }) },
+                        set: { manager.setPower(deviceIDs: Set(lights.map(\.id)), on: $0) }
+                    ))
                     .toggleStyle(.switch)
                     .labelsHidden()
-                    .controlSize(.small)
+                    .controlSize(.mini)
+                }
             }
-            if device.isOn {
-                NativeBrightnessSlider(device: device, showsLabel: false)
-                    .controlSize(.small)
-            }
+            NativeLightCollection(lights: lights, layout: layout, compact: true)
         }
     }
 }

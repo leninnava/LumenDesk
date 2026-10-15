@@ -8,6 +8,7 @@ struct NativeGroupDetailView: View {
     let scope: LightScope
     let lights: [LightDevice]
     @Binding var selection: NativeSidebarItem?
+    @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
 
     private var ids: Set<String> { Set(lights.map(\.id)) }
 
@@ -19,6 +20,7 @@ struct NativeGroupDetailView: View {
                         ? "No lights found yet. LumenDesk keeps scanning your network; you can also scan now with ⌘R."
                         : "This room has no lights yet.")
                         .foregroundStyle(.secondary)
+                    if case .room(let roomID) = scope { NativeAddLightsMenu(roomID: roomID) }
                 }
             } else {
                 Section {
@@ -55,9 +57,16 @@ struct NativeGroupDetailView: View {
                     }
                 }
 
-                Section("Lights") {
-                    ForEach(lights) { light in
-                        NativeLightRow(device: light) { selection = .light(light.id) }
+                Section {
+                    NativeLightCollection(lights: lights, layout: layout) { selection = .light($0.id) }
+                        .padding(.vertical, 4)
+                } header: {
+                    HStack {
+                        Text("Lights")
+                        Spacer()
+                        if case .room(let roomID) = scope {
+                            NativeAddLightsMenu(roomID: roomID)
+                        }
                     }
                 }
             }
@@ -67,27 +76,60 @@ struct NativeGroupDetailView: View {
     }
 }
 
-/// One light inside a group: status, name, and a power switch. Clicking the name opens it.
+/// One light as a row: status, name, a power switch and optionally brightness. Clicking the name opens it.
 struct NativeLightRow: View {
     @EnvironmentObject private var manager: LightManager
     @ObservedObject var device: LightDevice
+    var showsBrightness = false
     let onOpen: () -> Void
 
     var body: some View {
-        HStack {
-            NativeStatusIcon(device: device)
-            Button(action: onOpen) {
-                VStack(alignment: .leading) {
-                    Text(device.label)
-                    Text(nativeStatusText(device)).font(.caption).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                NativeStatusIcon(device: device)
+                Button(action: onOpen) {
+                    VStack(alignment: .leading) {
+                        Text(device.label)
+                        Text(nativeStatusText(device)).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Toggle("Power", isOn: Binding(get: { device.isOn }, set: { manager.setPower(device, on: $0) }))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .controlSize(showsBrightness ? .small : .regular)
+            }
+            if showsBrightness, device.isOn {
+                NativeBrightnessSlider(device: device, showsLabel: false).controlSize(.small)
+            }
+        }
+        .contextMenu { NativeRoomMenu(device: device) }
+    }
+}
+
+/// "Add Lights" menu listing lights that aren't in this room.
+struct NativeAddLightsMenu: View {
+    @EnvironmentObject private var manager: LightManager
+    let roomID: UUID
+
+    var body: some View {
+        let others = manager.devices.filter { manager.room(forLightID: $0.id)?.id != roomID }
+        Menu("Add Lights") {
+            ForEach(others) { light in
+                Button {
+                    manager.assign(lightID: light.id, toRoom: roomID)
+                } label: {
+                    if let current = manager.room(forLightID: light.id) {
+                        Text("\(light.label) (from \(current.name))")
+                    } else {
+                        Text(light.label)
+                    }
                 }
             }
-            .buttonStyle(.plain)
-            Spacer()
-            Toggle("Power", isOn: Binding(get: { device.isOn }, set: { manager.setPower(device, on: $0) }))
-                .toggleStyle(.switch)
-                .labelsHidden()
         }
+        .disabled(others.isEmpty)
+        .fixedSize()
     }
 }
 #endif

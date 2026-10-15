@@ -80,6 +80,15 @@ struct NativeLightDetailView: View {
             Section("Device") {
                 TextField("Name", text: $name)
                     .onSubmit { manager.setCustomName(device.id, name: name) }
+                Picker("Room", selection: Binding(
+                    get: { manager.room(forLightID: device.id)?.id },
+                    set: { manager.assign(lightID: device.id, toRoom: $0) }
+                )) {
+                    Text("No Room").tag(UUID?.none)
+                    ForEach(manager.rooms) { room in
+                        Text(room.name).tag(UUID?.some(room.id))
+                    }
+                }
                 LabeledContent("Brand", value: device.brand.rawValue.capitalized)
                 if let sku = device.sku { LabeledContent("Model", value: sku) }
                 LabeledContent("Address", value: device.address)

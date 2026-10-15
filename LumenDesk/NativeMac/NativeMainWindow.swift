@@ -11,6 +11,9 @@ enum NativeSidebarItem: Hashable {
 struct NativeMainWindow: View {
     @EnvironmentObject private var manager: LightManager
     @State private var selection: NativeSidebarItem? = .all
+    @AppStorage(NativeDeviceLayout.storageKey) private var layout: NativeDeviceLayout = .tiles
+    @State private var addingRoom = false
+    @State private var renamingRoom: Room?
 
     var body: some View {
         NavigationSplitView {
@@ -18,12 +21,17 @@ struct NativeMainWindow: View {
                 Section {
                     Label("All Lights", systemImage: "lightbulb.2").tag(NativeSidebarItem.all)
                 }
-                if !manager.rooms.isEmpty {
-                    Section("Rooms") {
-                        ForEach(manager.rooms) { room in
-                            Label(room.name, systemImage: "square.split.bottomrightquarter")
-                                .tag(NativeSidebarItem.room(room.id))
-                        }
+                Section("Rooms") {
+                    ForEach(manager.rooms) { room in
+                        Label(room.name, systemImage: "square.split.bottomrightquarter")
+                            .tag(NativeSidebarItem.room(room.id))
+                            .contextMenu {
+                                Button("Rename…") { renamingRoom = room }
+                                Button("Delete Room", role: .destructive) {
+                                    if selection == .room(room.id) { selection = .all }
+                                    manager.deleteRoom(room.id)
+                                }
+                            }
                     }
                 }
                 Section("Lights") {
@@ -33,11 +41,30 @@ struct NativeMainWindow: View {
                 }
             }
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
+            .safeAreaInset(edge: .bottom) {
+                Button {
+                    addingRoom = true
+                } label: {
+                    Label("Add Room", systemImage: "plus")
+                }
+                .buttonStyle(.borderless)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+            }
         } detail: {
             detail
                 .safeAreaInset(edge: .bottom) { errorBanner }
         }
         .toolbar {
+            ToolbarItem {
+                Picker("Show Lights As", selection: $layout) {
+                    ForEach(NativeDeviceLayout.allCases) { option in
+                        Label(option.title, systemImage: option.symbol).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .help("Show lights as tiles or a list")
+            }
             ToolbarItem {
                 Button {
                     manager.scan()
@@ -50,6 +77,16 @@ struct NativeMainWindow: View {
         }
         .navigationSubtitle(manager.isScanning ? "Scanning…" : "")
         .managedActionConfirmations(manager)
+        .nativeRoomNameAlert(isPresented: $addingRoom, title: "New Room", confirmTitle: "Create") { name in
+            manager.createRoom(name: name)
+            if let room = manager.rooms.last(where: { $0.name == name }) { selection = .room(room.id) }
+        }
+        .nativeRoomNameAlert(
+            isPresented: Binding(get: { renamingRoom != nil }, set: { if !$0 { renamingRoom = nil } }),
+            title: "Rename Room", initialName: renamingRoom?.name ?? "", confirmTitle: "Rename"
+        ) { name in
+            if let room = renamingRoom { manager.renameRoom(room.id, to: name) }
+        }
         .onAppear { manager.start() }
     }
 
