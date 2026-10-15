@@ -24,9 +24,13 @@ rewrites most of the file and drops the shared scheme. Add new files to `project
 (the fork's IDs use the `F7`/`F8`/`F9` prefixes).
 
 ```sh
-Tools/build-signed.sh
+Tools/build-signed.sh            # Debug; `Tools/build-signed.sh Release` for Release
 open .build/dd/Build/Products/Debug/LumenDesk.app
 ```
+
+`Tools/install.sh` builds a signed Release copy, quits any running LumenDesk and replaces
+`/Applications/LumenDesk.app`. Turn on Settings → General → "Open LumenDesk at login" from that
+copy so login opens the installed one.
 
 `build-signed.sh` signs with this Mac's Apple Development certificate (a free Apple ID works; add
 it in Xcode → Settings → Accounts → Manage Certificates). Keep builds signed: macOS ties Local

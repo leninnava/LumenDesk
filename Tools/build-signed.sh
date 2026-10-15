@@ -1,5 +1,9 @@
 #!/bin/sh
-# Debug build signed with this Mac's Apple Development certificate (fork).
+# Build signed with this Mac's Apple Development certificate (fork). Debug by default:
+#
+#   Tools/build-signed.sh                        # Debug
+#   Tools/build-signed.sh Release                # or CONFIGURATION=Release Tools/build-signed.sh
+#   Tools/build-signed.sh [Debug|Release] SETTING=value …   # extra arguments go to xcodebuild
 #
 # A stable signature keeps macOS's Local Network and Bluetooth permissions across rebuilds;
 # unsigned builds count as a new app every time and silently lose them. Signing also turns on
@@ -12,6 +16,11 @@
 set -eo pipefail
 cd "$(dirname "$0")/.."
 
+configuration=${CONFIGURATION:-Debug}
+case "$1" in
+    Debug|Release) configuration=$1; shift ;;
+esac
+
 team=$(security find-certificate -c "Apple Development" -p 2>/dev/null \
     | openssl x509 -noout -subject 2>/dev/null \
     | sed -nE 's/.*OU ?= ?([A-Z0-9]{10}).*/\1/p' || true)
@@ -20,11 +29,11 @@ if [ -z "$team" ]; then
     exit 1
 fi
 
-xcodebuild -project LumenDesk.xcodeproj -scheme LumenDesk -configuration Debug \
+xcodebuild -project LumenDesk.xcodeproj -scheme LumenDesk -configuration "$configuration" \
     -destination "platform=macOS,arch=$(uname -m)" -derivedDataPath .build/dd \
     CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Development" DEVELOPMENT_TEAM="$team" \
     PROVISIONING_PROFILE_SPECIFIER="" "$@" build | { grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true; }
 
-codesign --verify --deep --strict .build/dd/Build/Products/Debug/LumenDesk.app
+codesign --verify --deep --strict ".build/dd/Build/Products/$configuration/LumenDesk.app"
 
-echo "open .build/dd/Build/Products/Debug/LumenDesk.app"
+echo "open .build/dd/Build/Products/$configuration/LumenDesk.app"
