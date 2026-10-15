@@ -20,6 +20,8 @@ final class AppServices {
     let networkGate: NativeNetworkGate
     /// Publishes room/all-lights state for the Control Center controls and the desktop widget.
     let controlsBridge: NativeControlsBridge
+    let shortcuts: NativeShortcutCenter
+    let macEvents: NativeMacEvents
     #endif
 
     private init() {
@@ -29,8 +31,18 @@ final class AppServices {
         goveeScenes = GoveeSceneStore()
         networkGate = NativeNetworkGate()
         controlsBridge = NativeControlsBridge(manager: manager)
+        shortcuts = NativeShortcutCenter()
+        macEvents = NativeMacEvents()
         #endif
     }
+
+    #if os(macOS)
+    /// Starts discovery, Bluetooth, the network gate, shortcuts and automations. Every entry point
+    /// calls this (app launch, the windows, the menu bar, intents); it's safe to call repeatedly.
+    func startNative() {
+        manager.startNative(bluetooth: goveeBluetooth, gate: networkGate, shortcuts: shortcuts, macEvents: macEvents)
+    }
+    #endif
 
     /// Whether the process is a unit-test host, where nothing should touch the App Group.
     static var isRunningTests: Bool {
@@ -44,7 +56,7 @@ final class AppServices {
     func prepareForIntent(timeout: Duration = .seconds(4),
                           until isReady: @MainActor (LightManager) -> Bool) async {
         #if os(macOS)
-        manager.startNative(bluetooth: goveeBluetooth, gate: networkGate)
+        startNative()
         #else
         if UserDefaults.standard.bool(forKey: "LumenDesk.hasOnboarded.v1") { manager.start() }
         #endif

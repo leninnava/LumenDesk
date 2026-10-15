@@ -13,8 +13,8 @@ struct LumenDeskApp: App {
     @StateObject private var goveeBluetooth: GoveeBluetoothController
     @StateObject private var goveeScenes: GoveeSceneStore
     @StateObject private var networkGate: NativeNetworkGate
-    @StateObject private var shortcuts = NativeShortcutCenter()
-    @StateObject private var macEvents = NativeMacEvents()
+    @StateObject private var shortcuts: NativeShortcutCenter
+    @StateObject private var macEvents: NativeMacEvents
     #endif
 
     init() {
@@ -24,6 +24,8 @@ struct LumenDeskApp: App {
         _goveeBluetooth = StateObject(wrappedValue: services.goveeBluetooth)
         _goveeScenes = StateObject(wrappedValue: services.goveeScenes)
         _networkGate = StateObject(wrappedValue: services.networkGate)
+        _shortcuts = StateObject(wrappedValue: services.shortcuts)
+        _macEvents = StateObject(wrappedValue: services.macEvents)
         if !AppServices.isRunningTests { services.controlsBridge.start() }
         #endif
     }
@@ -106,7 +108,7 @@ struct LumenDeskApp: App {
                 // The label exists from launch, even when the main window doesn't open (a login
                 // launch with the window closed last time), so shortcuts and automations work.
                 .onAppear {
-                    manager.startNative(bluetooth: goveeBluetooth, gate: networkGate, shortcuts: shortcuts, macEvents: macEvents)
+                    AppServices.shared.startNative()
                 }
         }
         .menuBarExtraStyle(.window)
