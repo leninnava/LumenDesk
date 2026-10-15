@@ -125,4 +125,52 @@ final class GoveeBluetoothTests: XCTestCase {
         XCTAssertEqual(red.kelvin, 0)
         XCTAssertNil(GoveeBluetoothProtocol.colorState(fromMode: [0x15, 0x01, 0x00]))
     }
+
+    // MARK: Security regressions (see FORK.md)
+
+    func testUntrustedAddressTextIsNotUsedAsALogFormat() {
+        // Before the fix this crashed the process: the text went to NSLog as its format string.
+        XCTAssertEqual(GoveeClient.commandAddress(source: "192.168.0.36", reported: "%@%@%@%s%s%n"), "192.168.0.36")
+    }
+
+    func testOnlyMACStyleGoveeDeviceIDsAreAccepted() {
+        XCTAssertTrue(GoveeProtocol.isValidDeviceID("0E:60:D0:C9:07:B8:CA:CE"))
+        XCTAssertTrue(GoveeProtocol.isValidDeviceID("d0:c9:07:b8:ca:ce"))
+        XCTAssertFalse(GoveeProtocol.isValidDeviceID("ble:ihoment_H6008_00B7"))
+        XCTAssertFalse(GoveeProtocol.isValidDeviceID("%@"))
+        XCTAssertFalse(GoveeProtocol.isValidDeviceID("0E:60:D0:C9:07:B8:CA:CE:00"))
+    }
+
+    func testLANLightCannotPassAsBluetoothOnly() {
+        let spoofed = LightDevice(id: "govee:ble:x", brand: .govee, backendID: "ble:ihoment_H6008_00B7",
+                                  name: "x", address: "192.168.0.50", sku: "H6008")
+        XCTAssertFalse(spoofed.isBluetoothOnly)
+        let paired = LightDevice(id: "govee:ble:ihoment_H6008_00B7", brand: .govee,
+                                 backendID: "ble:ihoment_H6008_00B7", name: "x", address: "Bluetooth", sku: "H6008")
+        XCTAssertTrue(paired.isBluetoothOnly)
+    }
+
+    func testControllerRefusesBluetoothOnlyLightsThatWereNotPaired() {
+        let bluetooth = GoveeBluetoothController()
+        bluetooth.isPaired = { _ in false }
+        let light = LightDevice(id: "govee:ble:ihoment_H6008_00B7", brand: .govee,
+                                backendID: "ble:ihoment_H6008_00B7", name: "x", address: "Bluetooth", sku: "H6008")
+        bluetooth.send([GoveeBluetoothProtocol.powerFrame(on: true)], to: light)
+        bluetooth.prepare(light)
+        XCTAssertNil(bluetooth.states[light.id])
+    }
+
+    func testOversizedSceneParametersAreRejected() throws {
+        XCTAssertEqual(GoveeBluetoothProtocol.sceneFrames(code: 1, param: Data(count: 4400)), [])
+        let big = Data(count: GoveeBluetoothProtocol.maxSceneParamBytes + 1).base64EncodedString()
+        let json = #"{"data":{"categories":[{"categoryName":"X","scenes":[{"sceneName":"Huge","lightEffects":[{"sceneCode":5,"scenceParam":"\#(big)"}]},{"sceneName":"Fine","lightEffects":[{"sceneCode":6,"scenceParam":"AQI="}]}]}]}}"#
+        XCTAssertEqual(try GoveeSceneStore.parse(Data(json.utf8)).map(\.name), ["Fine"])
+    }
+
+    func testAdvertNamesMustUseGoveeNamingSchemes() {
+        XCTAssertNil(GoveeBluetoothProtocol.parseName("ANYTHINGH60A1CACF"))
+        XCTAssertNil(GoveeBluetoothProtocol.parseName("evil_H6008_00B7"))
+        XCTAssertEqual(GoveeBluetoothProtocol.parseName("ihoment_H6008_00B7")?.suffix, 0x00B7)
+        XCTAssertEqual(GoveeBluetoothProtocol.parseName("GVH60A1CACF")?.sku, "H60A1")
+    }
 }

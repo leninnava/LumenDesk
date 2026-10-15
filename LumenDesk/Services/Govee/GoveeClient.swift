@@ -19,6 +19,9 @@ final class GoveeClient {
     private let socket: UDPSocket
     private let queue = DispatchQueue(label: "LumenDesk.govee")
     private var addressByDevice: [String: String] = [:]
+    /// Fork: scan replies are only trusted shortly after we sent a scan; any host can send one.
+    private var scanWindowEnd: TimeInterval = 0
+    private static let scanWindow: TimeInterval = 15
     private var deviceByAddress: [String: String] = [:]
 
     /// Minimum spacing between commands sent to one device. Govee firmware
@@ -48,7 +51,7 @@ final class GoveeClient {
         } catch {
             // iOS denies multicast membership without the restricted
             // entitlement; discovery still works via the unicast sweep below.
-            NSLog("Govee multicast join failed: \(error)")
+            NSLog("%@", "Govee multicast join failed: \(error)")
         }
         socket.onReceive = { [weak self] data, host, _ in
             self?.handle(data: data, from: host)
@@ -61,6 +64,7 @@ final class GoveeClient {
 
         queue.async { [weak self] in
             guard let self else { return }
+            self.scanWindowEnd = ProcessInfo.processInfo.systemUptime + Self.scanWindow
             var multicastSent = 0
             var multicastUnoccupied = 0
             var multicastFailed = 0
@@ -322,7 +326,8 @@ final class GoveeClient {
     /// address; this makes Govee agree.
     static func commandAddress(source: String, reported: String?) -> String {
         guard let reported, !reported.isEmpty, reported != source else { return source }
-        NSLog("Govee device reports \(reported) but answered from \(source); using \(source)")
+        // The text comes from an untrusted packet, so it must never be the format string.
+        NSLog("%@", "Govee device reports \(reported) but answered from \(source); using \(source)")
         return source
     }
 
@@ -343,6 +348,11 @@ final class GoveeClient {
         // Govee occasionally emits truncated/duplicated frames; ignore failures.
         if let scan = GoveeProtocol.decodeScanResponse(data) {
             let id = scan.msg.data.device
+            // Fork: the ID becomes the light's identity and routing key, and any host can send
+            // a scan reply, so only accept Govee's MAC-style IDs.
+            guard GoveeProtocol.isValidDeviceID(id) else { return }
+            // Outside a scan, a scan reply is unsolicited: don't add lights or move existing ones.
+            guard ProcessInfo.processInfo.systemUptime <= scanWindowEnd else { return }
             let address = Self.commandAddress(source: host, reported: scan.msg.data.ip)
             Self.learnAddress(deviceID: id, address: address,
                               addressesByDevice: &addressByDevice, deviceByAddress: &deviceByAddress)

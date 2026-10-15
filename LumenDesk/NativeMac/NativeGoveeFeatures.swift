@@ -90,8 +90,10 @@ struct NativeGoveeScenesSection: View {
     }
 
     private func apply(_ scene: GoveeScene) {
+        let frames = scene.frames
+        guard !frames.isEmpty else { return }
         lastScene = scene.name
-        sendGoveeFrames(scene.frames, to: device, manager: manager, bluetooth: bluetooth)
+        sendGoveeFrames(frames, to: device, manager: manager, bluetooth: bluetooth)
         manager.logActivity(.command, title: "Scene applied", detail: "\(device.label): \(scene.name)")
     }
 }

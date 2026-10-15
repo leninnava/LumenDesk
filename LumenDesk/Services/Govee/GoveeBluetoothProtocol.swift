@@ -34,9 +34,14 @@ enum GoveeBluetoothProtocol {
         GoveeProtocol.segmentColorPacket(r: rgb.r, g: rgb.g, b: rgb.b, segments: segments)
     }
 
+    /// Largest scene parameter accepted. Real ones are a few hundred bytes (H60A1's largest is
+    /// 211); the line counter is one byte, so anything near 4 KB can't be encoded at all.
+    static let maxSceneParamBytes = 2048
+
     /// A scene from Govee's scene library: its parameter uploaded as `a3` lines, then the
-    /// scene code selected with `33 05 04`.
+    /// scene code selected with `33 05 04`. Empty when the parameter is too large to send.
     static func sceneFrames(code: UInt16, param: Data) -> [[UInt8]] {
+        guard param.count <= maxSceneParamBytes else { return [] }
         let select = GoveeProtocol.blePacket([0x33, 0x05, 0x04, UInt8(code & 0xFF), UInt8(code >> 8)])
         guard !param.isEmpty else { return [select] }
 
@@ -126,10 +131,14 @@ enum GoveeBluetoothProtocol {
     /// the two-byte suffix taken from the device's MAC address.
     static func parseName(_ name: String) -> (sku: String, suffix: UInt16)? {
         let upper = name.uppercased()
-        guard let match = upper.range(of: #"H[0-9A-F]{4}_?[0-9A-F]{4}$"#, options: .regularExpression) else {
+        // Anchored: only Govee's own naming schemes, not any name that happens to end like one.
+        guard let match = upper.range(of: #"^(GV|IHOMENT_|GOVEE_)H[0-9A-F]{4}_?[0-9A-F]{4}$"#,
+                                      options: .regularExpression) else {
             return nil
         }
         let token = upper[match].replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: "IHOMENT", with: "").replacingOccurrences(of: "GOVEE", with: "")
+            .replacingOccurrences(of: "GV", with: "")
         guard let suffix = UInt16(token.suffix(4), radix: 16) else { return nil }
         return (String(token.prefix(5)), suffix)
     }

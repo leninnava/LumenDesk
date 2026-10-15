@@ -27,6 +27,9 @@ final class GoveeSceneStore: ObservableObject {
 
     private let cacheDirectory: URL?
     private let maxCacheAge: TimeInterval = 7 * 24 * 3600
+    /// A model's catalogue is about 30 KB; anything far larger isn't one.
+    nonisolated static let maxResponseBytes = 2_000_000
+    nonisolated static let maxScenes = 500
 
     init(cacheDirectory: URL? = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
@@ -95,6 +98,7 @@ final class GoveeSceneStore: ObservableObject {
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw URLError(.badServerResponse)
         }
+        guard data.count <= maxResponseBytes else { throw URLError(.dataLengthExceedsMaximum) }
         return data
     }
 
@@ -117,12 +121,16 @@ final class GoveeSceneStore: ObservableObject {
             }
             let data: Body
         }
-        return try JSONDecoder().decode(Response.self, from: data).data.categories.flatMap { category in
-            category.scenes.compactMap { scene in
-                guard let effect = scene.lightEffects.first, effect.sceneCode != 0 else { return nil }
+        guard data.count <= maxResponseBytes else { throw URLError(.dataLengthExceedsMaximum) }
+        let scenes = try JSONDecoder().decode(Response.self, from: data).data.categories.flatMap { category in
+            category.scenes.compactMap { scene -> GoveeScene? in
+                guard let effect = scene.lightEffects.first, effect.sceneCode != 0,
+                      let param = Data(base64Encoded: effect.scenceParam),
+                      param.count <= GoveeBluetoothProtocol.maxSceneParamBytes else { return nil }
                 return GoveeScene(name: scene.sceneName, category: category.categoryName, code: effect.sceneCode,
-                                  param: Data(base64Encoded: effect.scenceParam) ?? Data())
+                                  param: param)
             }
         }
+        return Array(scenes.prefix(maxScenes))
     }
 }

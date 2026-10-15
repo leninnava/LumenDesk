@@ -8,6 +8,7 @@ import Foundation
 
 enum NativePairedBluetoothLights {
     private static let key = "Native.pairedGoveeBluetooth.v1"
+    private static let peripheralsKey = "Native.pairedGoveeBluetoothPeripherals.v1"
 
     /// Advert name → model.
     static var all: [String: String] {
@@ -15,6 +16,11 @@ enum NativePairedBluetoothLights {
         set { UserDefaults.standard.set(newValue, forKey: key) }
     }
 
+    /// Advert name → the peripheral's system identifier (this Mac's alias for the device).
+    static var peripherals: [String: String] {
+        get { UserDefaults.standard.dictionary(forKey: peripheralsKey) as? [String: String] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: peripheralsKey) }
+    }
 }
 
 extension LightManager {
@@ -23,6 +29,11 @@ extension LightManager {
     func connectGoveeBluetooth(_ bluetooth: GoveeBluetoothController) {
         guard goveeBluetooth == nil else { return }
         goveeBluetooth = bluetooth
+        bluetooth.isPaired = { NativePairedBluetoothLights.all[$0] != nil }
+        bluetooth.pairedPeripheral = { NativePairedBluetoothLights.peripherals[$0].flatMap(UUID.init(uuidString:)) }
+        bluetooth.onBindPeripheral = { name, identifier in
+            NativePairedBluetoothLights.peripherals[name] = identifier.uuidString
+        }
 
         bluetooth.onReply = { [weak self] deviceID, reply in
             Task { @MainActor in
@@ -58,6 +69,7 @@ extension LightManager {
     func pairBluetoothLight(_ light: GoveeBluetoothController.NearbyLight, room roomID: UUID?,
                             bluetooth: GoveeBluetoothController) {
         NativePairedBluetoothLights.all[light.name] = light.sku
+        NativePairedBluetoothLights.peripherals[light.name] = light.identifier.uuidString
         addPairedBluetoothLight(name: light.name, sku: light.sku, bluetooth: bluetooth)
         if let roomID, let device = devices.first(where: { $0.id == "govee:ble:\(light.name)" }) {
             nativeAssign(device, toRoom: roomID)
@@ -67,7 +79,9 @@ extension LightManager {
 
     func forgetBluetoothLight(_ device: LightDevice, bluetooth: GoveeBluetoothController) {
         guard device.isBluetoothOnly else { return }
-        NativePairedBluetoothLights.all[String(device.backendID.dropFirst("ble:".count))] = nil
+        let name = String(device.backendID.dropFirst("ble:".count))
+        NativePairedBluetoothLights.all[name] = nil
+        NativePairedBluetoothLights.peripherals[name] = nil
         bluetooth.forget(device)
         removeBluetoothGovee(deviceID: device.id)
         logActivity(.system, title: "Bluetooth light forgotten", detail: device.label)

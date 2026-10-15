@@ -139,7 +139,9 @@ final class UDPSocket {
     }
 
     private func drain() {
-        while true {
+        // Fork: bounded, so a flood can't monopolise the queue. The read source is
+        // level-triggered and fires again while datagrams remain.
+        for _ in 0..<64 {
             var addr = sockaddr_in()
             var len = socklen_t(MemoryLayout<sockaddr_in>.size)
             let n = receiveBuffer.withUnsafeMutableBufferPointer { bptr -> Int in

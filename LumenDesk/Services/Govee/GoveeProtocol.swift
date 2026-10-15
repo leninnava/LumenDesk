@@ -64,6 +64,11 @@ enum GoveeProtocol {
         }
     }
 
+    /// Govee device IDs are 6–8 hex byte pairs separated by colons (`0E:60:D0:C9:07:B8:CA:CE`).
+    static func isValidDeviceID(_ id: String) -> Bool {
+        id.range(of: #"^([0-9A-Fa-f]{2}:){5,7}[0-9A-Fa-f]{2}$"#, options: .regularExpression) != nil
+    }
+
     static func decodeScanResponse(_ data: Data) -> ScanResponse? {
         guard data.range(of: scanMarker) != nil,
               let response = try? decoder.decode(ScanResponse.self, from: data),
