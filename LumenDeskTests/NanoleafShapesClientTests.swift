@@ -60,6 +60,87 @@ final class NanoleafShapesClientTests: XCTestCase {
         XCTFail("Timed out waiting for condition", file: file, line: line)
     }
 
+    // MARK: Off a home network (fork F5)
+
+    func testOffHomeNothingCarryingTheTokenIsSentAndComingHomeRefreshes() async throws {
+        await waitUntil { self.client.isIdle(self.serial) }
+        client.setNetworkAllowed(false)
+        let before = controller.requests.count
+        XCTAssertFalse(client.canSend(serial))
+        client.reconnect()
+        client.refresh(serial)
+        client.setState(serial, ["on": ["value": false]])
+        client.selectEffect(serial, name: "Northern Lights")
+        client.setOrientation(serial, degrees: 30)
+        client.identifyController(serial)
+        client.startStream(serial, owner: "music")
+        client.submitStreamFrame(serial, owner: "music", frames: [frame(9, 1)])
+        do {
+            _ = try await client.effectLibrary(serial)
+            XCTFail("an awaited request must not be sent off-home")
+        } catch {
+            XCTAssertEqual(error as? NanoleafError, .unavailable)
+        }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(controller.requests.count, before, "no request carrying the token leaves off-home")
+        XCTAssertTrue(datagrams.sent.isEmpty)
+        XCTAssertEqual(client.streamStatus(serial), .idle)
+
+        let count = updates.count
+        client.setNetworkAllowed(true)
+        XCTAssertTrue(client.canSend(serial))
+        await waitUntil { self.updates.count > count }
+        XCTAssertEqual(controller.requests.dropFirst(before).map(\.method), ["GET"], "coming home reads the controller again")
+    }
+
+    func testLeavingHomeDropsQueuedWrites() async throws {
+        controller.responseDelay = 0.05
+        client.refresh(serial) // occupy the lane so the write queues behind it
+        client.setOrientation(serial, degrees: 70)
+        client.setNetworkAllowed(false)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertFalse(controller.requests.contains { $0.path.hasSuffix("/panelLayout") },
+                       "a write queued before leaving home is not sent after it")
+        XCTAssertTrue(client.isIdle(serial))
+    }
+
+    func testLeavingHomeEndsALiveStream() async throws {
+        client.startStream(serial, owner: "music")
+        client.submitStreamFrame(serial, owner: "music", frames: [frame(9, 1)])
+        await waitUntil { self.datagrams.sent.count >= 1 }
+        XCTAssertEqual(client.streamStatus(serial), .streaming(owner: "music"))
+        client.setNetworkAllowed(false)
+        XCTAssertEqual(client.streamStatus(serial), .idle)
+        XCTAssertEqual(statuses.last, .idle)
+        let sent = datagrams.sent.count
+        client.submitStreamFrame(serial, owner: "music", frames: [frame(9, 2)])
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(datagrams.sent.count, sent)
+    }
+
+    func testTheEventStreamStopsOffHomeAndResumesAtHome() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [FakeShapesURLProtocol.self]
+        let listening = NanoleafClient(credentials: InMemoryShapesCredentials(),
+                                       session: URLSession(configuration: configuration),
+                                       eventSession: URLSession(configuration: configuration),
+                                       datagrams: datagrams, resolver: FixedResolver(address: "192.0.2.44"))
+        defer { listening.pause() }
+        try await listening.pair(endpoint: controller.endpoint)
+        XCTAssertTrue(listening.isListeningForEvents(serial))
+        listening.setNetworkAllowed(false)
+        XCTAssertFalse(listening.isListeningForEvents(serial))
+        listening.reconnect()
+        XCTAssertFalse(listening.isListeningForEvents(serial), "a rescan off-home does not reconnect the stream")
+        listening.setNetworkAllowed(true)
+        XCTAssertTrue(listening.isListeningForEvents(serial))
+        // Leaving Demo Mode's pause alone: coming home during it starts nothing.
+        listening.pause()
+        listening.setNetworkAllowed(false)
+        listening.setNetworkAllowed(true)
+        XCTAssertFalse(listening.isListeningForEvents(serial))
+    }
+
     // MARK: Topology
 
     func testEveryRefreshCarriesTheTopologyAndAMalformedOneKeepsStateUsable() async throws {

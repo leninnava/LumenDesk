@@ -82,8 +82,11 @@ final class LightManager: ObservableObject {
     weak var goveeBluetooth: GoveeBluetoothLightTransport?
     /// Fork: false off the user's home networks, which stops periodic polling of LAN lights
     /// (and Nanoleaf, whose token travels in the URL) so nothing is sent to saved addresses
-    /// on an unfamiliar network. Bluetooth-only lights are unaffected.
-    var networkActivityAllowed = true
+    /// on an unfamiliar network. Bluetooth-only lights are unaffected. Nanoleaf goes further and
+    /// sends nothing to a saved controller at all while this is false (F5).
+    var networkActivityAllowed = true {
+        didSet { nanoleaf.setNetworkAllowed(networkActivityAllowed) }
+    }
     private let nanoleaf: NanoleafClient
     /// Shapes arrangements, orientation, per-panel designs and live output.
     /// Views that draw a wall observe it directly, so a streamed frame never

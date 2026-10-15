@@ -136,6 +136,13 @@ final class NanoleafClient: NSObject {
     private var eventTasks: [String: Task<Void, Never>] = [:]
     private var generation = 0
     private var paused = false
+    /// Fork (F5): false off the user's home networks. Every request to a saved controller carries
+    /// its token in the URL, so none is sent to a saved address on a network that may not be
+    /// home: no refreshes, writes, streams or event-stream reconnects. Bonjour browsing and
+    /// pairing a newly found controller still work.
+    private var networkAllowed = true
+    /// Whether requests to saved controllers are held back, for Demo Mode or off-home.
+    private var blocked: Bool { paused || !networkAllowed }
     private var pairingInProgress = false
     private var didLoadCredentials = false
 
@@ -191,6 +198,7 @@ final class NanoleafClient: NSObject {
     init(credentials: NanoleafCredentialStoring = NanoleafCredentialStore(),
          session: URLSession? = nil,
          listensForEvents: Bool = true,
+         eventSession: URLSession? = nil,
          datagrams: NanoleafDatagramSending = NanoleafUDPSender(),
          resolver: NanoleafHostResolving = NanoleafSystemResolver(),
          streamPort: UInt16 = NanoleafStreamPacket.defaultPort,
@@ -212,7 +220,9 @@ final class NanoleafClient: NSObject {
             configuration.httpMaximumConnectionsPerHost = 1
             self.session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
         }
-        if listensForEvents {
+        if listensForEvents, let eventSession {
+            self.eventSession = eventSession
+        } else if listensForEvents {
             // The event stream is one long-lived response, so it needs its own
             // session: the command session's two-second limits would cut it off.
             let configuration = URLSessionConfiguration.ephemeral
@@ -220,9 +230,9 @@ final class NanoleafClient: NSObject {
             configuration.timeoutIntervalForResource = 60 * 60 * 24 * 7
             configuration.urlCache = nil
             configuration.httpShouldSetCookies = false
-            eventSession = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+            self.eventSession = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
         } else {
-            eventSession = nil
+            self.eventSession = nil
         }
         super.init()
     }
@@ -265,11 +275,35 @@ final class NanoleafClient: NSObject {
     /// listeners, not just UI callbacks.
     func pause() {
         paused = true
-        generation += 1
         browsers.forEach { $0.stop() }
         browsers.removeAll()
         services.forEach { $0.stop() }
         services.removeAll()
+        cancelControllerTraffic()
+    }
+
+    /// Fork (F5): set from `LightManager.networkActivityAllowed`. Going off-home drops queued and
+    /// in-flight requests, ends streams and stops event-stream listeners; coming home refreshes
+    /// every saved controller and listens again, as `reconnect()` does.
+    func setNetworkAllowed(_ allowed: Bool) {
+        guard allowed != networkAllowed else { return }
+        networkAllowed = allowed
+        if allowed {
+            guard !paused else { return }
+            for serial in pairings.keys {
+                refresh(serial)
+                startEvents(serial)
+            }
+        } else {
+            cancelControllerTraffic()
+        }
+    }
+
+    /// Whether the event-stream listener for a controller is running.
+    func isListeningForEvents(_ serial: String) -> Bool { eventTasks[serial] != nil }
+
+    private func cancelControllerTraffic() {
+        generation += 1
         tasks.values.forEach { $0.cancel() }
         tasks.removeAll()
         pending.removeAll()
@@ -319,19 +353,19 @@ final class NanoleafClient: NSObject {
     func family(_ serial: String) -> NanoleafProductFamily? { families[serial] }
 
     /// Whether a write for this controller would be sent now, rather than
-    /// dropped because the client is paused or the controller is unpaired.
-    func canSend(_ serial: String) -> Bool { !paused && pairings[serial] != nil }
+    /// dropped because the client is paused or off-home, or the controller is unpaired.
+    func canSend(_ serial: String) -> Bool { !blocked && pairings[serial] != nil }
 
     // MARK: Coalesced writes
 
     func refresh(_ serial: String) {
-        guard !paused, pairings[serial] != nil else { return }
+        guard !blocked, pairings[serial] != nil else { return }
         pending[serial, default: Pending()].refresh = true
         drain(serial)
     }
 
     func setState(_ serial: String, _ state: [String: Any], transient: Bool = false) {
-        guard !paused, pairings[serial] != nil else { return }
+        guard !blocked, pairings[serial] != nil else { return }
         var next = pending[serial] ?? Pending()
         if state["hue"] != nil || state["sat"] != nil {
             next.state.removeValue(forKey: "ct")
@@ -350,7 +384,7 @@ final class NanoleafClient: NSObject {
     }
 
     func selectEffect(_ serial: String, name: String) {
-        guard !paused, pairings[serial] != nil else { return }
+        guard !blocked, pairings[serial] != nil else { return }
         var next = pending[serial] ?? Pending()
         next.state.removeValue(forKey: "hue")
         next.state.removeValue(forKey: "sat")
@@ -366,7 +400,7 @@ final class NanoleafClient: NSObject {
     /// newest request replaces any older one still queued, so painting
     /// quickly never builds a backlog.
     func displayPanels(_ serial: String, frames: [NanoleafPanelFrame], refresh: Bool = true) {
-        guard !paused, pairings[serial] != nil else { return }
+        guard !blocked, pairings[serial] != nil else { return }
         var next = pending[serial] ?? Pending()
         next.state.removeValue(forKey: "hue")
         next.state.removeValue(forKey: "sat")
@@ -381,7 +415,7 @@ final class NanoleafClient: NSObject {
     /// Writes the global orientation. The controller answers 204 with no
     /// body, so a refresh always follows: success is what reads back.
     func setOrientation(_ serial: String, degrees: Int) {
-        guard !paused, pairings[serial] != nil else { return }
+        guard !blocked, pairings[serial] != nil else { return }
         var next = pending[serial] ?? Pending()
         next.orientation = degrees
         next.refresh = true
@@ -494,7 +528,7 @@ final class NanoleafClient: NSObject {
 
     private func enqueue(_ serial: String, _ kind: NanoleafOperation,
                          _ work: @escaping @MainActor (NanoleafPairing) async throws -> Void) {
-        guard !paused, pairings[serial] != nil else { return }
+        guard !blocked, pairings[serial] != nil else { return }
         operations[serial, default: []].append(Operation(kind: kind, reportsFailures: true, run: work, abandon: { _ in }))
         drain(serial)
     }
@@ -506,7 +540,7 @@ final class NanoleafClient: NSObject {
 
     private func perform<T>(_ serial: String, _ kind: NanoleafOperation,
                             _ work: @escaping @MainActor (NanoleafPairing) async throws -> T) async throws -> T {
-        guard !paused, pairings[serial] != nil else { throw NanoleafError.unavailable }
+        guard !blocked, pairings[serial] != nil else { throw NanoleafError.unavailable }
         let enqueuedGeneration = generation
         return try await withCheckedThrowingContinuation { continuation in
             var finished = false
@@ -532,7 +566,7 @@ final class NanoleafClient: NSObject {
     // MARK: The per-controller lane
 
     private func drain(_ serial: String) {
-        guard tasks[serial] == nil, !paused else { return }
+        guard tasks[serial] == nil, !blocked else { return }
         let generation = self.generation
         tasks[serial] = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -634,7 +668,7 @@ final class NanoleafClient: NSObject {
     /// effect, colour or panel command ends it, so a stale stream can never
     /// outlive the action that superseded it.
     func startStream(_ serial: String, owner: String) {
-        guard !paused, pairings[serial] != nil else { return }
+        guard !blocked, pairings[serial] != nil else { return }
         if let existing = streams[serial], existing.owner == owner {
             if case .failed = existing.status {} else { return }
         }
@@ -690,7 +724,7 @@ final class NanoleafClient: NSObject {
     /// Queues a frame for the owner's stream. Panels merge by ID, newest
     /// wins, and at most one datagram leaves per tenth of a second.
     func submitStreamFrame(_ serial: String, owner: String, frames: [NanoleafPanelFrame]) {
-        guard !paused, let session = streams[serial], session.owner == owner else { return }
+        guard !blocked, let session = streams[serial], session.owner == owner else { return }
         switch session.status {
         case .failed, .idle: return
         default: break
@@ -753,7 +787,7 @@ final class NanoleafClient: NSObject {
     // MARK: Event stream
 
     private func startEvents(_ serial: String) {
-        guard let eventSession, !paused, eventTasks[serial] == nil, pairings[serial] != nil else { return }
+        guard let eventSession, !blocked, eventTasks[serial] == nil, pairings[serial] != nil else { return }
         let generation = self.generation
         eventTasks[serial] = Task { @MainActor [weak self] in
             var delay: UInt64 = 2_000_000_000
