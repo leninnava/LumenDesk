@@ -39,6 +39,8 @@
         <key>NSAllowsLocalNetworking</key>
         <true/>
     </dict>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>LumenDesk uses Bluetooth for Govee scenes and segments on lights that don't accept them over Wi-Fi.</string>
     <key>NSBonjourServices</key>
     <array>
         <string>_lifx._udp</string>

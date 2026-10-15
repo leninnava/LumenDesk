@@ -7,6 +7,10 @@ import UniformTypeIdentifiers
 @main
 struct LumenDeskApp: App {
     @StateObject private var manager = LightManager()
+    #if os(macOS)
+    @StateObject private var goveeBluetooth = GoveeBluetoothController()
+    @StateObject private var goveeScenes = GoveeSceneStore()
+    #endif
 
     var body: some Scene {
         #if os(macOS)
@@ -27,6 +31,8 @@ struct LumenDeskApp: App {
         Window("LumenDesk", id: NativeScenes.mainWindowID) {
             NativeMainWindow()
                 .environmentObject(manager)
+                .environmentObject(goveeBluetooth)
+                .environmentObject(goveeScenes)
                 .frame(minWidth: 640, minHeight: 460)
         }
         .commands {
@@ -67,6 +73,8 @@ struct LumenDeskApp: App {
         MenuBarExtra {
             NativeMenuBarView()
                 .environmentObject(manager)
+                .environmentObject(goveeBluetooth)
+                .environmentObject(goveeScenes)
         } label: {
             NativeMenuBarLabel(manager: manager)
         }

@@ -24,13 +24,19 @@ rewrites most of the file and drops the shared scheme. Add new files to `project
 (the fork's IDs use the `F7`/`F8`/`F9` prefixes).
 
 ```sh
-xcodebuild -project LumenDesk.xcodeproj -scheme LumenDesk -configuration Debug \
-  -destination "platform=macOS" -derivedDataPath .build/dd \
-  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+Tools/build-signed.sh
 open .build/dd/Build/Products/Debug/LumenDesk.app
 ```
 
-Unsigned builds run without the App Sandbox (entitlements are only applied when signed).
+`build-signed.sh` signs with this Mac's Apple Development certificate (a free Apple ID works; add
+it in Xcode → Settings → Accounts → Manage Certificates). Keep builds signed: macOS ties Local
+Network and Bluetooth permission to the signature, and an unsigned build counts as a new app on
+every rebuild, so lights silently stop answering even though the permission switch shows on. If
+the certificate shows as invalid, install Apple's WWDR G3 intermediate
+(`https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer`).
+
+Signed builds run in the App Sandbox, so settings live in
+`~/Library/Containers/com.lumendesk.LumenDesk`, separate from any earlier unsigned run.
 
 ## What we learned on real hardware
 
@@ -64,5 +70,5 @@ Unsigned builds run without the App Sandbox (entitlements are only applied when 
 ## Plan
 
 1. Native macOS interface and a working menu bar extra. *(done)*
-2. Govee over Bluetooth: scenes and segments for models that ignore `ptReal` on LAN (H60A1).
+2. Govee over Bluetooth: scenes and segments for models that ignore `ptReal` on LAN (H60A1). *(done)*
 3. Govee cloud API as a fallback, only if a model works over neither LAN nor Bluetooth.

@@ -24,6 +24,7 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         LSMinimumSystemVersion: "13.0"
         NSHumanReadableCopyright: "Copyright © 2026 SeanPVera"
+        NSBluetoothAlwaysUsageDescription: LumenDesk uses Bluetooth for Govee scenes and segments on lights that don't accept them over Wi-Fi.
         NSLocalNetworkUsageDescription: LumenDesk discovers and controls LIFX, Govee, and Nanoleaf Shapes lights on your local network.
         NSMicrophoneUsageDescription: LumenDesk analyzes music and room audio levels locally to animate music-reactive lighting effects.
         NSScreenCaptureUsageDescription: LumenDesk can capture system audio from music apps locally to drive music-reactive lightshows.

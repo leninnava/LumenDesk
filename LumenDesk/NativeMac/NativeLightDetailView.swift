@@ -70,6 +70,13 @@ struct NativeLightDetailView: View {
                 }
             }
 
+            if device.brand == .govee {
+                NativeGoveeScenesSection(device: device)
+                if let count = manager.nativeSegmentCount(for: device) {
+                    NativeGoveeSegmentsSection(device: device, count: count)
+                }
+            }
+
             Section("Device") {
                 TextField("Name", text: $name)
                     .onSubmit { manager.setCustomName(device.id, name: name) }

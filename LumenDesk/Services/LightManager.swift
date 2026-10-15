@@ -2350,6 +2350,13 @@ extension LightManager {
 extension LightManager {
     /// Capability detected from the discovery SKU; nil for non-Govee devices
     /// and Govee models the catalog doesn't recognize.
+    /// Fork: relays Bluetooth-format frames (Govee scenes) to a light over the LAN `ptReal`
+    /// command, through the same paced queue as segment layouts.
+    func sendGoveeFrames(_ device: LightDevice, frames: [[UInt8]]) {
+        guard device.brand == .govee, !frames.isEmpty else { return }
+        govee?.applySegments(deviceID: device.backendID, packets: frames)
+    }
+
     func segmentProfile(for device: LightDevice) -> GoveeSegmentProfile? {
         guard device.brand == .govee else { return nil }
         return GoveeSegmentProfile.detect(sku: device.sku)

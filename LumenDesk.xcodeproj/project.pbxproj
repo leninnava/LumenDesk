@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F800000000000000000011 /* GoveeBluetoothTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000011 /* GoveeBluetoothTests.swift */; };
+		F800000000000000000010 /* NativeGoveeFeatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000010 /* NativeGoveeFeatures.swift */; };
+		F800000000000000000009 /* GoveeSceneLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000009 /* GoveeSceneLibrary.swift */; };
+		F800000000000000000008 /* GoveeBluetoothController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000008 /* GoveeBluetoothController.swift */; };
+		F800000000000000000007 /* GoveeBluetoothProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000007 /* GoveeBluetoothProtocol.swift */; };
 		F800000000000000000001 /* NativeControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000001 /* NativeControls.swift */; };
 		F800000000000000000002 /* NativeLightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000002 /* NativeLightDetailView.swift */; };
 		F800000000000000000003 /* NativeGroupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000003 /* NativeGroupDetailView.swift */; };
@@ -112,6 +117,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F900000000000000000011 /* GoveeBluetoothTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoveeBluetoothTests.swift; sourceTree = "<group>"; };
+		F900000000000000000010 /* NativeGoveeFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeGoveeFeatures.swift; sourceTree = "<group>"; };
+		F900000000000000000009 /* GoveeSceneLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoveeSceneLibrary.swift; sourceTree = "<group>"; };
+		F900000000000000000008 /* GoveeBluetoothController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoveeBluetoothController.swift; sourceTree = "<group>"; };
+		F900000000000000000007 /* GoveeBluetoothProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoveeBluetoothProtocol.swift; sourceTree = "<group>"; };
 		F900000000000000000001 /* NativeControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeControls.swift; sourceTree = "<group>"; };
 		F900000000000000000002 /* NativeLightDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLightDetailView.swift; sourceTree = "<group>"; };
 		F900000000000000000003 /* NativeGroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeGroupDetailView.swift; sourceTree = "<group>"; };
@@ -326,6 +336,9 @@
 		C100000000000000000006 /* Govee */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000009 /* GoveeSceneLibrary.swift */,
+				F900000000000000000008 /* GoveeBluetoothController.swift */,
+				F900000000000000000007 /* GoveeBluetoothProtocol.swift */,
 				A100000000000000000008 /* GoveeProtocol.swift */,
 				A100000000000000000009 /* GoveeClient.swift */,
 			);
@@ -374,6 +387,7 @@
 		C200000000000000000001 /* LumenDeskTests */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000011 /* GoveeBluetoothTests.swift */,
 				A300000000000000000004 /* NanoleafTests.swift */,
 				A300000000000000000013 /* NanoleafShapesManagerTests.swift */,
 				A30000000000000000000E /* NanoleafShapesTests.swift */,
@@ -400,6 +414,7 @@
 		F700000000000000000001 /* NativeMac */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000010 /* NativeGoveeFeatures.swift */,
 				F900000000000000000001 /* NativeControls.swift */,
 				F900000000000000000002 /* NativeLightDetailView.swift */,
 				F900000000000000000003 /* NativeGroupDetailView.swift */,
@@ -502,6 +517,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F800000000000000000010 /* NativeGoveeFeatures.swift in Sources */,
+				F800000000000000000009 /* GoveeSceneLibrary.swift in Sources */,
+				F800000000000000000008 /* GoveeBluetoothController.swift in Sources */,
+				F800000000000000000007 /* GoveeBluetoothProtocol.swift in Sources */,
 				F800000000000000000001 /* NativeControls.swift in Sources */,
 				F800000000000000000002 /* NativeLightDetailView.swift in Sources */,
 				F800000000000000000003 /* NativeGroupDetailView.swift in Sources */,
@@ -580,6 +599,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F800000000000000000011 /* GoveeBluetoothTests.swift in Sources */,
 				B300000000000000000004 /* NanoleafTests.swift in Sources */,
 				B300000000000000000013 /* NanoleafShapesManagerTests.swift in Sources */,
 				B30000000000000000000E /* NanoleafShapesTests.swift in Sources */,
