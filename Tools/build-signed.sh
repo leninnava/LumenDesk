@@ -4,12 +4,12 @@
 # A stable signature keeps macOS's Local Network and Bluetooth permissions across rebuilds;
 # unsigned builds count as a new app every time and silently lose them. Signing also turns on
 # the App Sandbox. Upstream's team ID stays in the project; this uses yours.
-set -e
+set -eo pipefail
 cd "$(dirname "$0")/.."
 
 team=$(security find-certificate -c "Apple Development" -p 2>/dev/null \
     | openssl x509 -noout -subject 2>/dev/null \
-    | sed -nE 's/.*OU ?= ?([A-Z0-9]{10}).*/\1/p')
+    | sed -nE 's/.*OU ?= ?([A-Z0-9]{10}).*/\1/p' || true)
 if [ -z "$team" ]; then
     echo "No Apple Development certificate found. Add one in Xcode → Settings → Accounts → Manage Certificates." >&2
     exit 1
@@ -18,6 +18,6 @@ fi
 xcodebuild -project LumenDesk.xcodeproj -scheme LumenDesk -configuration Debug \
     -destination "platform=macOS,arch=$(uname -m)" -derivedDataPath .build/dd \
     CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Development" DEVELOPMENT_TEAM="$team" \
-    PROVISIONING_PROFILE_SPECIFIER="" "$@" build | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)"
+    PROVISIONING_PROFILE_SPECIFIER="" "$@" build | { grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true; }
 
 echo "open .build/dd/Build/Products/Debug/LumenDesk.app"
