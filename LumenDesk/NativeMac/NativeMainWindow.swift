@@ -3,6 +3,7 @@ import SwiftUI
 
 enum NativeSidebarItem: Hashable {
     case all
+    case scenes
     case room(UUID)
     case light(String)
 }
@@ -24,6 +25,7 @@ struct NativeMainWindow: View {
             List(selection: $selection) {
                 Section {
                     Label("All Lights", systemImage: "lightbulb.2").tag(NativeSidebarItem.all)
+                    Label("Scenes", systemImage: "photo.on.rectangle").tag(NativeSidebarItem.scenes)
                 }
                 Section("Rooms") {
                     ForEach(manager.rooms) { room in
@@ -130,6 +132,8 @@ struct NativeMainWindow: View {
             } else {
                 placeholder
             }
+        case .scenes:
+            NativeSceneLibraryView()
         case .all, nil:
             NativeGroupDetailView(title: "All Lights", scope: .all, lights: manager.devices, selection: $selection)
         }
@@ -164,6 +168,13 @@ struct NativeMainWindow: View {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 Text(error).lineLimit(2)
                 Spacer()
+                if let undo = manager.commandErrorUndo {
+                    Button("Undo") {
+                        undo()
+                        manager.commandError = nil
+                        manager.commandErrorUndo = nil
+                    }
+                }
                 Button("Dismiss") { manager.commandError = nil }
             }
             .padding(10)
