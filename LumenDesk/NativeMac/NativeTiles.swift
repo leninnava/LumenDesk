@@ -49,8 +49,11 @@ struct NativeLightTile: View {
         .help(device.isOn ? "Turn off \(device.label)" : "Turn on \(device.label)")
         .accessibilityLabel("\(device.label), \(nativeStatusText(device))")
         .contextMenu {
-            if let onOpen { Button("Open", action: onOpen) }
-            Button("Rename…") { renaming = true }
+            if let onOpen {
+                Button("Open", action: onOpen)
+                // Alerts can't be shown from the menu bar panel, so renaming is window-only.
+                Button("Rename…") { renaming = true }
+            }
             NativeRoomMenu(device: device)
             Button("Identify") { manager.identify(device) }
         }
@@ -87,10 +90,23 @@ struct NativeLightCollection: View {
 
     var body: some View {
         switch layout {
+        case .tiles where compact:
+            // The menu bar panel sizes itself to its content; a lazy grid there can measure as
+            // empty, so use plain rows of two.
+            VStack(spacing: 8) {
+                ForEach(Array(stride(from: 0, to: lights.count, by: 2)), id: \.self) { start in
+                    HStack(spacing: 8) {
+                        ForEach(lights[start..<min(start + 2, lights.count)]) { light in
+                            NativeLightTile(device: light, compact: true)
+                        }
+                        if start + 1 >= lights.count { Color.clear.frame(maxWidth: .infinity) }
+                    }
+                }
+            }
         case .tiles:
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: compact ? 120 : 140), spacing: 10)], spacing: 10) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
                 ForEach(lights) { light in
-                    NativeLightTile(device: light, compact: compact, onOpen: onOpen.map { open in { open(light) } })
+                    NativeLightTile(device: light, onOpen: onOpen.map { open in { open(light) } })
                 }
             }
         case .list:

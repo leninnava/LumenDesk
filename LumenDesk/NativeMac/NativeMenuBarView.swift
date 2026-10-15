@@ -59,8 +59,7 @@ struct NativeMenuBarView: View {
                 }
                 .padding(14)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+                let groups = VStack(alignment: .leading, spacing: 14) {
                         ForEach(manager.rooms) { room in
                             let lights = manager.devices(in: room)
                             if !lights.isEmpty {
@@ -74,9 +73,12 @@ struct NativeMenuBarView: View {
                         }
                     }
                     .padding(14)
+                // Grow with the content; scroll only once there are many lights.
+                if manager.devices.count > 8 {
+                    ScrollView { groups }.frame(height: 420)
+                } else {
+                    groups
                 }
-                .frame(maxHeight: 420)
-                .fixedSize(horizontal: false, vertical: true)
             }
 
             Divider()
