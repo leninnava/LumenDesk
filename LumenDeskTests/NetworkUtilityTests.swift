@@ -245,3 +245,71 @@ final class NetworkUtilityTests: XCTestCase {
         )
     }
 }
+
+#if os(macOS)
+/// Fork (F3): recognising a home network by subnet, router address and router MAC.
+final class HomeNetworkFingerprintTests: XCTestCase {
+    private typealias Network = NativeNetworkGate.Network
+
+    func testASavedMACMustMatchAndAMissingOneDoesNotCountAsHome() {
+        let home = Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: "98:03:8e:00:00:01")
+        XCTAssertTrue(home.matches(Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: "98:03:8e:00:00:01")))
+        XCTAssertFalse(home.matches(Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: "98:03:8e:00:00:02")),
+                       "a café on the same default range has a different router")
+        XCTAssertFalse(home.matches(Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: nil)))
+        XCTAssertFalse(home.matches(Network(subnet: "192.168.1.0/24", gateway: "192.168.0.1", router: "98:03:8e:00:00:01")))
+        XCTAssertFalse(home.matches(Network(subnet: "192.168.0.0/24", gateway: "192.168.0.254", router: "98:03:8e:00:00:01")))
+    }
+
+    func testAHomeSavedBeforeTheMACFallsBackAndIsUpgradedOnItsFirstMatch() throws {
+        // What earlier builds stored: no router key at all.
+        let stored = Data(#"[{"subnet":"192.168.0.0/24","gateway":"192.168.0.1"},{"subnet":"10.0.0.0/24","gateway":"10.0.0.1"}]"#.utf8)
+        let homes = try JSONDecoder().decode([Network].self, from: stored)
+        XCTAssertEqual(homes.map(\.router), [nil, nil])
+        let current = Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: "98:03:8e:00:00:01")
+        XCTAssertTrue(homes[0].matches(current))
+        XCTAssertTrue(homes[0].matches(Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: nil)))
+
+        let upgraded = Network.upgrading(homes, with: current)
+        XCTAssertEqual(upgraded[0].router, "98:03:8e:00:00:01")
+        XCTAssertNil(upgraded[1].router, "only the entry that matched takes the MAC")
+        XCTAssertFalse(upgraded[0].matches(Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: "aa:bb:cc:00:00:01")))
+        XCTAssertEqual(Network.upgrading(upgraded, with: Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1",
+                                                                 router: "aa:bb:cc:00:00:01")), upgraded,
+                       "a saved MAC is never replaced by another")
+        XCTAssertEqual(Network.upgrading(homes, with: Network(subnet: "192.168.0.0/24", gateway: "192.168.0.1", router: nil)), homes)
+        XCTAssertEqual(Network.upgrading(homes, with: nil), homes)
+
+        let roundTrip = try JSONDecoder().decode([Network].self, from: JSONEncoder().encode(upgraded))
+        XCTAssertEqual(roundTrip, upgraded)
+    }
+
+    func testTheRouterMACComesFromTheServiceOnTheSameInterfaceAndGateway() {
+        let services: [[String: Any]] = [
+            ["InterfaceName": "utun4", "Router": "10.8.0.20", "Addresses": ["10.8.0.21"]],
+            ["InterfaceName": "en1", "ARPResolvedIPAddress": "192.168.0.1", "ARPResolvedHardwareAddress": "aa:bb:cc:dd:ee:ff"],
+            ["InterfaceName": "en0", "ARPResolvedIPAddress": "192.168.0.254", "ARPResolvedHardwareAddress": "11:22:33:44:55:66"],
+            ["InterfaceName": "en0", "ConfirmedInterfaceName": "en0", "Router": "192.168.0.1",
+             "ARPResolvedIPAddress": "192.168.0.1", "ARPResolvedHardwareAddress": "98:3:8e:a:0:1"]
+        ]
+        XCTAssertEqual(Network.routerMAC(in: services, interface: "en0", gateway: "192.168.0.1"), "98:03:8e:0a:00:01")
+        XCTAssertEqual(Network.routerMAC(in: services, interface: "en1", gateway: "192.168.0.1"), "aa:bb:cc:dd:ee:ff")
+        XCTAssertNil(Network.routerMAC(in: services, interface: "en0", gateway: "192.168.0.2"))
+        XCTAssertNil(Network.routerMAC(in: services, interface: "en5", gateway: "192.168.0.1"))
+    }
+
+    func testOnlyARealUnicastMACIsAccepted() {
+        XCTAssertEqual(Network.normalizedMAC("98:3:8E:A:0:1"), "98:03:8e:0a:00:01")
+        XCTAssertNil(Network.normalizedMAC("2:0:0:0:0:0"), "macOS's placeholder for a hidden address")
+        XCTAssertNil(Network.normalizedMAC("02:00:00:00:00:00"))
+        XCTAssertNil(Network.normalizedMAC("0:0:0:0:0:0"))
+        XCTAssertNil(Network.normalizedMAC("ff:ff:ff:ff:ff:ff"))
+        XCTAssertNil(Network.normalizedMAC("01:00:5e:00:00:01"), "multicast")
+        XCTAssertNil(Network.normalizedMAC("98:03:8e:0a:00"))
+        XCTAssertNil(Network.normalizedMAC("98:03:8e:0a:00:01:02"))
+        XCTAssertNil(Network.normalizedMAC("98:03:8e:0a::01"))
+        XCTAssertNil(Network.normalizedMAC("98:003:8e:0a:00:01"))
+        XCTAssertNil(Network.normalizedMAC("zz:03:8e:0a:00:01"))
+    }
+}
+#endif

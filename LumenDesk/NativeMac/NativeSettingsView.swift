@@ -75,7 +75,7 @@ private struct NativeNetworkSettings: View {
             } header: {
                 Text("Home networks")
             } footer: {
-                Text("On other networks LumenDesk doesn't search for or contact lights on its own. Networks are recognised by their address range and router, so another network using the same range can look like home.")
+                Text("On other networks LumenDesk doesn't search for or contact lights on its own. Networks are recognised by their address range, router address and the router's hardware address. A network saved before LumenDesk read that address takes it the next time you're on it.")
             }
             Section {
                 LabeledContent("Lights found", value: "\(manager.devices.count)")
