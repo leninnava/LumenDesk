@@ -20,14 +20,16 @@ final class LIFXClient {
 
     private let socket: UDPSocket
     private let queue = DispatchQueue(label: "LumenDesk.lifx")
-    private let source: UInt32 = UInt32.random(in: 1...UInt32.max)
+    private let source: UInt32
     private var addressesByMac: [String: String] = [:]
-    private var targetsByMac: [String: Data] = [:]
-    private var macByTarget: [Data: String] = [:]
+    private var replies: LIFXReplyFilter
     private var productByMac: [String: UInt32] = [:]
     private var matrixDimensionsByMac: [String: (width: Int, height: Int)] = [:]
 
     init() throws {
+        let source = UInt32.random(in: 1...UInt32.max)
+        self.source = source
+        replies = LIFXReplyFilter(source: source)
         socket = try UDPSocket(boundPort: 0, queue: queue)
         socket.onReceive = { [weak self] data, host, _ in
             self?.handle(data: data, from: host)
@@ -57,7 +59,7 @@ final class LIFXClient {
         queue.async { [weak self] in
             guard let self,
                   let host = self.addressesByMac[macHex],
-                  let target = self.targetsByMac[macHex] else { return }
+                  let target = self.replies.target(for: macHex) else { return }
             let packet = LIFXProtocol.packet(type: .lightGet, source: self.source,
                                              target: target, payload: Data())
             self.sendCommand(packet, to: host)
@@ -69,7 +71,7 @@ final class LIFXClient {
         queue.async { [weak self] in
             guard let self,
                   let host = self.addressesByMac[macHex],
-                  let target = self.targetsByMac[macHex] else { return }
+                  let target = self.replies.target(for: macHex) else { return }
             if self.matrixDimensionsByMac[macHex] != nil {
                 self.sendMatrixRefreshIfKnown(macHex: macHex, host: host, target: target)
             } else {
@@ -84,7 +86,7 @@ final class LIFXClient {
         queue.async { [weak self] in
             guard let self,
                   let host = self.addressesByMac[macHex],
-                  let target = self.targetsByMac[macHex] else { return }
+                  let target = self.replies.target(for: macHex) else { return }
             let payload = LIFXProtocol.setPowerPayload(on: on)
             let packet = LIFXProtocol.packet(type: .setLightPower, source: self.source,
                                              target: target, payload: payload)
@@ -96,7 +98,7 @@ final class LIFXClient {
         queue.async { [weak self] in
             guard let self,
                   let host = self.addressesByMac[macHex],
-                  let target = self.targetsByMac[macHex] else { return }
+                  let target = self.replies.target(for: macHex) else { return }
             if let timestamp = musicTimestamp, ProcessInfo.processInfo.systemUptime - timestamp > MusicLightingRenderer.maximumFrameAge {
                 self.musicMetrics.record(age: ProcessInfo.processInfo.systemUptime - timestamp, expired: true)
                 return
@@ -113,7 +115,7 @@ final class LIFXClient {
         queue.async { [weak self] in
             guard let self,
                   let host = self.addressesByMac[macHex],
-                  let target = self.targetsByMac[macHex] else { return }
+                  let target = self.replies.target(for: macHex) else { return }
             let payload = LIFXProtocol.set64Payload(colors: colors, width: width,
                                                     durationMS: durationMS)
             let packet = LIFXProtocol.packet(type: .set64, source: self.source,
@@ -143,19 +145,15 @@ final class LIFXClient {
     // MARK: - Receive
 
     private func handle(data: Data, from host: String) {
-        guard let header = LIFXProtocol.parse(data) else { return }
-        // Filter to packets meant for our source id, but allow source==0 too
-        // (some firmwares echo zero).
-        if header.source != source && header.source != 0 { return }
-
-        let macHex: String
-        if let cached = macByTarget[header.target] {
-            macHex = cached
-        } else {
-            macHex = header.target.hexString
-            macByTarget[header.target] = macHex
+        // Fork (F8): only replies to our own source, and only from devices discovery found.
+        guard let header = LIFXProtocol.parse(data),
+              let accepted = replies.accept(header) else { return }
+        let macHex = accepted.macHex
+        if let evicted = accepted.evicted {
+            addressesByMac.removeValue(forKey: evicted)
+            productByMac.removeValue(forKey: evicted)
+            matrixDimensionsByMac.removeValue(forKey: evicted)
         }
-        targetsByMac[macHex] = header.target
         guard let type = LIFXMessage(rawValue: header.type) else { return }
 
         switch type {
@@ -217,6 +215,51 @@ final class LIFXClient {
     }
 
     private static let lunaProductIDs: Set<UInt32> = [219, 220]
+}
+
+/// Fork (F8): which LIFX replies the client acts on, and the bounded target-to-MAC maps.
+///
+/// A device copies the request's `source` into its reply, and LumenDesk never sends 0 (which
+/// asks a device to broadcast its reply to every client), so a reply carrying any other source
+/// answers someone else or was forged. Only a `StateService` reply, the answer to discovery,
+/// introduces a device; any other message from a target not seen in discovery is dropped, and at
+/// most `capacity` devices are remembered, oldest first out.
+struct LIFXReplyFilter {
+    static let capacity = 256
+
+    let source: UInt32
+    private var macByTarget: [Data: String] = [:]
+    private var targetsByMac: [String: Data] = [:]
+    /// MACs oldest first, for eviction.
+    private var order: [String] = []
+
+    init(source: UInt32) {
+        self.source = source
+    }
+
+    var count: Int { order.count }
+
+    func target(for macHex: String) -> Data? { targetsByMac[macHex] }
+
+    /// The device a reply belongs to, or nil to drop it. `evicted` names a device forgotten to
+    /// make room, whose other per-device state the caller drops too.
+    mutating func accept(_ header: LIFXProtocol.ParsedHeader) -> (macHex: String, evicted: String?)? {
+        guard source != 0, header.source == source,
+              header.target.count == 6, header.target.contains(where: { $0 != 0 }) else { return nil }
+        if let known = macByTarget[header.target] { return (known, nil) }
+        guard header.type == LIFXMessage.stateService.rawValue else { return nil }
+        let macHex = header.target.hexString
+        var evicted: String?
+        if order.count >= Self.capacity {
+            let oldest = order.removeFirst()
+            if let target = targetsByMac.removeValue(forKey: oldest) { macByTarget.removeValue(forKey: target) }
+            evicted = oldest
+        }
+        macByTarget[header.target] = macHex
+        targetsByMac[macHex] = header.target
+        order.append(macHex)
+        return (macHex, evicted)
+    }
 }
 
 extension Data {

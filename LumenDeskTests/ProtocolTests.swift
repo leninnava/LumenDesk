@@ -118,6 +118,59 @@ final class ProtocolTests: XCTestCase {
         XCTAssertFalse(matrix.containsZone(29))
     }
 
+    // MARK: LIFX reply filter (fork F8)
+
+    private func lifxReply(_ type: LIFXMessage, source: UInt32, target: Data) throws -> LIFXProtocol.ParsedHeader {
+        try XCTUnwrap(LIFXProtocol.parse(LIFXProtocol.packet(type: type, source: source, target: target, payload: Data())))
+    }
+
+    func testLIFXRepliesMustCarryOurSourceAndZeroIsRefused() throws {
+        var filter = LIFXReplyFilter(source: 0xCAFE)
+        let bulb = Data([0xD0, 0x73, 0xD5, 1, 2, 3])
+        XCTAssertNil(filter.accept(try lifxReply(.stateService, source: 0, target: bulb)),
+                     "source 0 is a reply broadcast to every client, not an answer to us")
+        XCTAssertNil(filter.accept(try lifxReply(.stateService, source: 0xBEEF, target: bulb)))
+        XCTAssertEqual(filter.count, 0)
+        XCTAssertEqual(filter.accept(try lifxReply(.stateService, source: 0xCAFE, target: bulb))?.macHex, "d073d5010203")
+        XCTAssertNil(filter.accept(try lifxReply(.lightState, source: 0, target: bulb)),
+                     "a known device's reply still has to be addressed to us")
+
+        var zeroSource = LIFXReplyFilter(source: 0)
+        XCTAssertNil(zeroSource.accept(try lifxReply(.stateService, source: 0, target: bulb)))
+    }
+
+    func testLIFXOnlyDiscoveryRepliesIntroduceADevice() throws {
+        var filter = LIFXReplyFilter(source: 7)
+        let bulb = Data([0xD0, 0x73, 0xD5, 9, 9, 9])
+        for type in [LIFXMessage.lightState, .stateVersion, .stateDeviceChain, .state64] {
+            XCTAssertNil(filter.accept(try lifxReply(type, source: 7, target: bulb)), "\(type) from an unknown target")
+        }
+        XCTAssertNil(filter.accept(try lifxReply(.stateService, source: 7, target: Data(count: 6))),
+                     "an all-zero target names no device")
+        XCTAssertEqual(filter.count, 0)
+        XCTAssertNotNil(filter.accept(try lifxReply(.stateService, source: 7, target: bulb)))
+        XCTAssertEqual(filter.accept(try lifxReply(.lightState, source: 7, target: bulb))?.macHex, "d073d5090909")
+        XCTAssertEqual(filter.target(for: "d073d5090909"), bulb)
+        XCTAssertNotNil(filter.accept(try lifxReply(.stateService, source: 7, target: bulb)))
+        XCTAssertEqual(filter.count, 1, "a repeat discovery reply is not a second device")
+    }
+
+    func testLIFXDeviceMapsAreCappedOldestFirst() throws {
+        var filter = LIFXReplyFilter(source: 7)
+        func target(_ n: Int) -> Data { Data([0xD0, 0x73, 0xD5, 0, UInt8(n >> 8), UInt8(n & 0xFF)]) }
+        for n in 0..<LIFXReplyFilter.capacity {
+            XCTAssertNil(try XCTUnwrap(filter.accept(try lifxReply(.stateService, source: 7, target: target(n)))).evicted)
+        }
+        XCTAssertEqual(filter.count, LIFXReplyFilter.capacity)
+        let overflow = try XCTUnwrap(filter.accept(try lifxReply(.stateService, source: 7, target: target(1_000))))
+        XCTAssertEqual(overflow.evicted, target(0).hexString)
+        XCTAssertEqual(filter.count, LIFXReplyFilter.capacity)
+        XCTAssertNil(filter.target(for: target(0).hexString))
+        XCTAssertNil(filter.accept(try lifxReply(.lightState, source: 7, target: target(0))),
+                     "an evicted device is unknown until discovery finds it again")
+        XCTAssertEqual(filter.target(for: target(1_000).hexString), target(1_000))
+    }
+
     func testGoveeDiscoveryMessageEncoding() throws {
         let root = try jsonObject(GoveeProtocol.scanRequest())
         let message = try XCTUnwrap(root["msg"] as? [String: Any])
