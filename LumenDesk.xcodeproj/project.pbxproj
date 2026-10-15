@@ -7,9 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F800000000000000000100 /* NativeScheduleDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000100 /* NativeScheduleDraft.swift */; };
+		F800000000000000000101 /* NativeSchedules.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000101 /* NativeSchedules.swift */; };
 		F800000000000000000102 /* NativeSceneLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000102 /* NativeSceneLibrary.swift */; };
 		F800000000000000000103 /* NativeEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000103 /* NativeEffects.swift */; };
 		F800000000000000000104 /* NativeMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000104 /* NativeMusicView.swift */; };
+		F800000000000000000105 /* NativeScheduleDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000105 /* NativeScheduleDraftTests.swift */; };
 		F800000000000000000017 /* NativeStartup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000017 /* NativeStartup.swift */; };
 		F800000000000000000016 /* NativeNetworkGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000016 /* NativeNetworkGate.swift */; };
 		F800000000000000000015 /* NativeBluetoothPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F900000000000000000015 /* NativeBluetoothPairing.swift */; };
@@ -126,9 +129,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F900000000000000000100 /* NativeScheduleDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeScheduleDraft.swift; sourceTree = "<group>"; };
+		F900000000000000000101 /* NativeSchedules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSchedules.swift; sourceTree = "<group>"; };
 		F900000000000000000102 /* NativeSceneLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSceneLibrary.swift; sourceTree = "<group>"; };
 		F900000000000000000103 /* NativeEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeEffects.swift; sourceTree = "<group>"; };
 		F900000000000000000104 /* NativeMusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMusicView.swift; sourceTree = "<group>"; };
+		F900000000000000000105 /* NativeScheduleDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeScheduleDraftTests.swift; sourceTree = "<group>"; };
 		F900000000000000000017 /* NativeStartup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStartup.swift; sourceTree = "<group>"; };
 		F900000000000000000016 /* NativeNetworkGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNetworkGate.swift; sourceTree = "<group>"; };
 		F900000000000000000015 /* NativeBluetoothPairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBluetoothPairing.swift; sourceTree = "<group>"; };
@@ -405,6 +411,7 @@
 		C200000000000000000001 /* LumenDeskTests */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000105 /* NativeScheduleDraftTests.swift */,
 				F900000000000000000011 /* GoveeBluetoothTests.swift */,
 				A300000000000000000004 /* NanoleafTests.swift */,
 				A300000000000000000013 /* NanoleafShapesManagerTests.swift */,
@@ -432,6 +439,8 @@
 		F700000000000000000001 /* NativeMac */ = {
 			isa = PBXGroup;
 			children = (
+				F900000000000000000100 /* NativeScheduleDraft.swift */,
+				F900000000000000000101 /* NativeSchedules.swift */,
 				F900000000000000000102 /* NativeSceneLibrary.swift */,
 				F900000000000000000103 /* NativeEffects.swift */,
 				F900000000000000000104 /* NativeMusicView.swift */,
@@ -544,6 +553,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F800000000000000000100 /* NativeScheduleDraft.swift in Sources */,
+				F800000000000000000101 /* NativeSchedules.swift in Sources */,
 				F800000000000000000102 /* NativeSceneLibrary.swift in Sources */,
 				F800000000000000000103 /* NativeEffects.swift in Sources */,
 				F800000000000000000104 /* NativeMusicView.swift in Sources */,
@@ -635,6 +646,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F800000000000000000105 /* NativeScheduleDraftTests.swift in Sources */,
 				F800000000000000000011 /* GoveeBluetoothTests.swift in Sources */,
 				B300000000000000000004 /* NanoleafTests.swift in Sources */,
 				B300000000000000000013 /* NanoleafShapesManagerTests.swift in Sources */,

@@ -5,6 +5,7 @@ enum NativeSidebarItem: Hashable {
     case all
     case scenes
     case music
+    case schedules
     case room(UUID)
     case light(String)
 }
@@ -28,6 +29,7 @@ struct NativeMainWindow: View {
                     Label("All Lights", systemImage: "lightbulb.2").tag(NativeSidebarItem.all)
                     Label("Scenes", systemImage: "photo.on.rectangle").tag(NativeSidebarItem.scenes)
                     Label("Music", systemImage: "music.note").tag(NativeSidebarItem.music)
+                    Label("Schedules", systemImage: "clock").tag(NativeSidebarItem.schedules)
                 }
                 Section("Rooms") {
                     ForEach(manager.rooms) { room in
@@ -138,6 +140,8 @@ struct NativeMainWindow: View {
             NativeSceneLibraryView()
         case .music:
             NativeMusicView()
+        case .schedules:
+            NativeSchedulesView()
         case .all, nil:
             NativeGroupDetailView(title: "All Lights", scope: .all, lights: manager.devices, selection: $selection)
         }
