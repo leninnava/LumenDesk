@@ -62,7 +62,7 @@ final class GoveeBluetoothController: NSObject, ObservableObject {
 
     /// A Govee light heard during a pairing scan.
     struct NearbyLight: Identifiable, Equatable {
-        /// Advert name, such as `ihoment_H6008_00B7`.
+        /// Advert name, such as `ihoment_H6008_1A2B`.
         let name: String
         let sku: String
         var rssi: Int

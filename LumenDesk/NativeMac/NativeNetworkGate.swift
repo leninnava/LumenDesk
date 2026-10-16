@@ -59,7 +59,7 @@ final class NativeNetworkGate: ObservableObject {
             return nil
         }
 
-        /// "98:3:8e:…" as "98:03:8e:…". Nil for anything that isn't a unicast MAC, and for the
+        /// "a4:5:6e:…" as "a4:05:6e:…". Nil for anything that isn't a unicast MAC, and for the
         /// placeholder 02:00:00:00:00:00 that macOS returns in place of a hidden one.
         static func normalizedMAC(_ raw: String) -> String? {
             let parts = raw.split(separator: ":", omittingEmptySubsequences: false)

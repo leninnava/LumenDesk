@@ -4,7 +4,7 @@ import XCTest
 /// Fork: closing idle Bluetooth links and reopening them on the next command. Runs without
 /// Bluetooth hardware: the controller gets no central, so links never get past "searching".
 final class GoveeBluetoothIdleTests: XCTestCase {
-    private let advert = "ihoment_H6008_00B7"
+    private let advert = "ihoment_H6008_1A2B"
 
     private func makeController() -> GoveeBluetoothController {
         let controller = GoveeBluetoothController(makeCentral: { _ in nil })
@@ -14,7 +14,7 @@ final class GoveeBluetoothIdleTests: XCTestCase {
 
     private func bluetoothLight() -> LightDevice {
         LightDevice(id: "govee:ble:\(advert)", brand: .govee, backendID: "ble:\(advert)",
-                    name: "H6008 00B7", address: "Bluetooth", sku: "H6008")
+                    name: "H6008 1A2B", address: "Bluetooth", sku: "H6008")
     }
 
     func testLANLinksCloseAfterTheirTimeout() {

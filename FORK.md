@@ -97,7 +97,7 @@ Signed builds run in the App Sandbox, so settings live in
   - It advertises intermittently (gaps over 30 s), so keep one connection open with a keep-alive
     instead of connecting per command. Scan with duplicates allowed, or a device whose first
     advert lacks a name is never matched.
-  - Its Bluetooth name ends one higher than its Wi-Fi device ID (`…CACF` vs `…CA:CE`), which is how
+  - Its Bluetooth name ends one higher than its Wi-Fi device ID (`…ABCE` vs `…AB:CD`), which is how
     to pair the two transports.
   - Right after a Bluetooth session, the first LAN command can be ignored; retry it.
 - **A full-tunnel VPN swallows Govee discovery.** With a VPN route for `224.0.0.0/4` through

@@ -127,7 +127,7 @@ enum GoveeBluetoothProtocol {
 
     // MARK: Matching a Bluetooth advert to a LAN light
 
-    /// Splits an advert name such as `GVH60A1CACF` or `ihoment_H6008_F821` into the model and
+    /// Splits an advert name such as `GVH60A1ABCE` or `ihoment_H6008_3C4D` into the model and
     /// the two-byte suffix taken from the device's MAC address.
     static func parseName(_ name: String) -> (sku: String, suffix: UInt16)? {
         let upper = name.uppercased()
@@ -144,7 +144,7 @@ enum GoveeBluetoothProtocol {
     }
 
     /// Whether a Bluetooth advert belongs to the LAN light with this SKU and device ID
-    /// (`0E:60:D0:C9:07:B8:CA:CE`). The Bluetooth MAC is usually the Wi-Fi MAC plus one.
+    /// (`0E:60:12:34:56:78:AB:CD`). The Bluetooth MAC is usually the Wi-Fi MAC plus one.
     static func advertName(_ name: String, matchesSKU sku: String?, deviceID: String) -> Bool {
         guard let sku, let advert = parseName(name), advert.sku == sku.uppercased() else { return false }
         let bytes = deviceID.split(separator: ":").compactMap { UInt8($0, radix: 16) }
