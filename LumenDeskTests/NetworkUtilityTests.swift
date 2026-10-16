@@ -299,7 +299,7 @@ final class HomeNetworkFingerprintTests: XCTestCase {
     }
 
     func testOnlyARealUnicastMACIsAccepted() {
-        XCTAssertEqual(Network.normalizedMAC("98:3:8E:A:0:1"), "a4:05:6e:0a:00:01")
+        XCTAssertEqual(Network.normalizedMAC("A4:5:6E:A:0:1"), "a4:05:6e:0a:00:01")
         XCTAssertNil(Network.normalizedMAC("2:0:0:0:0:0"), "macOS's placeholder for a hidden address")
         XCTAssertNil(Network.normalizedMAC("02:00:00:00:00:00"))
         XCTAssertNil(Network.normalizedMAC("0:0:0:0:0:0"))
@@ -308,7 +308,7 @@ final class HomeNetworkFingerprintTests: XCTestCase {
         XCTAssertNil(Network.normalizedMAC("a4:05:6e:0a:00"))
         XCTAssertNil(Network.normalizedMAC("a4:05:6e:0a:00:01:02"))
         XCTAssertNil(Network.normalizedMAC("a4:05:6e:0a::01"))
-        XCTAssertNil(Network.normalizedMAC("98:003:8e:0a:00:01"))
+        XCTAssertNil(Network.normalizedMAC("a4:005:6e:0a:00:01"))
         XCTAssertNil(Network.normalizedMAC("zz:03:8e:0a:00:01"))
     }
 }
