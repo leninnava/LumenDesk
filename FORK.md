@@ -11,6 +11,8 @@ close to it, so upstream changes merge cleanly and protocol fixes can go back as
   `#if os(macOS)`.
 - `LumenDeskApp.swift`: the macOS scenes point at `NativeMac/`. iOS still uses upstream's views.
 - Upstream's macOS views are left in the tree but unused, to keep merges small.
+- `README.md` is the fork's short README. Upstream's detailed feature reference (which CLAUDE.md
+  calls `README.md`) is `README-upstream.md`; update that one when engine behaviour changes.
 
 ## Remotes
 
